@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FollowStatus {
+  PENDING
+  APPROVED
+}
+
+enum LikeyTier {
+  LIKED
+  FINE
+  DISLIKED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  likeys          Likey[]
+  followsSent     Follow[] @relation("FollowsSent")
+  followsReceived Follow[] @relation("FollowsReceived")
+}
+
+// One-directional: follower -> followee, request + approve (see product decisions log)
+model Follow {
+  id         String       @id @default(uuid())
+  followerId String
+  followeeId String
+  status     FollowStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  follower User @relation("FollowsSent", fields: [followerId], references: [id])
+  followee User @relation("FollowsReceived", fields: [followeeId], references: [id])
+
+  @@unique([followerId, followeeId])
+}
+
+model Business {
+  id              String   @id @default(uuid())
+  name            String
+  category        String
+  address         String?
+  latitude        Float
+  longitude       Float
+  externalPlaceId String?  @unique
+  createdAt       DateTime @default(now())
+
+  likeys Likey[]
+}
+
+model Likey {
+  id         String    @id @default(uuid())
+  userId     String
+  businessId String
+  tier       LikeyTier
+  comment    String?
+  photoUrl   String?
+  createdAt  DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@index([userId])
+}

@@ -1,0 +1,287 @@
+import * as ImagePicker from "expo-image-picker";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "../../auth/AuthContext";
+import { api, type Business, type BusinessCategory, type LikeyTier } from "../../lib/api";
+import { useCurrentLocation } from "../../lib/useCurrentLocation";
+
+const TIERS: { value: LikeyTier; label: string }[] = [
+  { value: "LIKED", label: "Liked" },
+  { value: "FINE", label: "Fine" },
+  { value: "DISLIKED", label: "Disliked" },
+];
+
+const CATEGORIES: { value: BusinessCategory; label: string }[] = [
+  { value: "restaurant", label: "Restaurant" },
+  { value: "entertainment", label: "Entertainment" },
+];
+
+const COMMENT_MAX = 200;
+
+export default function CreateLikeyScreen() {
+  const { token } = useAuth();
+  const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
+
+  const [nearby, setNearby] = useState<Business[]>([]);
+  const [isLoadingNearby, setIsLoadingNearby] = useState(false);
+
+  const [mode, setMode] = useState<"select" | "manual">("select");
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [manualName, setManualName] = useState("");
+  const [manualCategory, setManualCategory] = useState<BusinessCategory | null>(null);
+
+  const [tier, setTier] = useState<LikeyTier | null>(null);
+  const [comment, setComment] = useState("");
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!token || !coords) return;
+    setIsLoadingNearby(true);
+    api
+      .nearbyBusinesses(token, coords.lat, coords.lng)
+      .then((res) => setNearby(res.businesses))
+      .catch(() => setNearby([]))
+      .finally(() => setIsLoadingNearby(false));
+  }, [token, coords]);
+
+  const pickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.5,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0]?.base64) {
+      setPhotoBase64(result.assets[0].base64);
+    }
+  };
+
+  const canSubmit =
+    !isSubmitting &&
+    tier !== null &&
+    (mode === "select" ? selectedBusinessId !== null : manualName.trim() !== "" && manualCategory !== null);
+
+  const onSubmit = async () => {
+    if (!token || !coords || !tier) return;
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      let businessId = selectedBusinessId;
+      if (mode === "manual") {
+        const { business } = await api.createBusiness(token, {
+          name: manualName.trim(),
+          category: manualCategory as BusinessCategory,
+          latitude: coords.lat,
+          longitude: coords.lng,
+        });
+        businessId = business.id;
+      }
+      if (!businessId) return;
+
+      await api.createLikey(token, {
+        businessId,
+        tier,
+        comment: comment.trim() || undefined,
+        photoBase64: photoBase64 ?? undefined,
+      });
+
+      setSubmitSuccess(true);
+      setMode("select");
+      setSelectedBusinessId(null);
+      setManualName("");
+      setManualCategory(null);
+      setTier(null);
+      setComment("");
+      setPhotoBase64(null);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Couldn't post this Likey");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoadingLocation) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+        <Text>Finding nearby places...</Text>
+      </View>
+    );
+  }
+
+  if (locationError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.error}>{locationError}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.section}>Where are you?</Text>
+      {mode === "select" ? (
+        <>
+          {isLoadingNearby ? (
+            <ActivityIndicator />
+          ) : (
+            <FlatList
+              data={nearby}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.row, selectedBusinessId === item.id && styles.rowSelected]}
+                  onPress={() => setSelectedBusinessId(item.id)}
+                >
+                  <Text>{item.name}</Text>
+                  <Text style={styles.muted}>
+                    {item.distanceMiles !== undefined ? `${item.distanceMiles.toFixed(1)} mi` : ""}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.muted}>No logged places near you yet</Text>}
+            />
+          )}
+          <TouchableOpacity onPress={() => setMode("manual")}>
+            <Text style={styles.link}>Can't find it? Add a new place</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Place name"
+            value={manualName}
+            onChangeText={setManualName}
+          />
+          <View style={styles.optionRow}>
+            {CATEGORIES.map((c) => (
+              <TouchableOpacity
+                key={c.value}
+                style={[styles.option, manualCategory === c.value && styles.optionSelected]}
+                onPress={() => setManualCategory(c.value)}
+              >
+                <Text>{c.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity onPress={() => setMode("select")}>
+            <Text style={styles.link}>Pick from nearby places instead</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      <Text style={styles.section}>How was it?</Text>
+      <View style={styles.optionRow}>
+        {TIERS.map((t) => (
+          <TouchableOpacity
+            key={t.value}
+            style={[styles.option, tier === t.value && styles.optionSelected]}
+            onPress={() => setTier(t.value)}
+          >
+            <Text>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.section}>Add a note (optional)</Text>
+      <TextInput
+        style={[styles.input, styles.commentInput]}
+        placeholder="What stood out?"
+        multiline
+        maxLength={COMMENT_MAX}
+        value={comment}
+        onChangeText={setComment}
+      />
+      <Text style={styles.muted}>
+        {comment.length}/{COMMENT_MAX}
+      </Text>
+
+      <Text style={styles.section}>Add a photo (optional)</Text>
+      {photoBase64 ? (
+        <View>
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${photoBase64}` }}
+            style={styles.photoPreview}
+          />
+          <TouchableOpacity onPress={() => setPhotoBase64(null)}>
+            <Text style={styles.linkDanger}>Remove photo</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.photoButton} onPress={pickPhoto}>
+          <Text style={styles.link}>Choose photo</Text>
+        </TouchableOpacity>
+      )}
+
+      {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
+      {submitSuccess ? <Text style={styles.success}>Likey posted!</Text> : null}
+
+      <TouchableOpacity
+        style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+        onPress={onSubmit}
+        disabled={!canSubmit}
+      >
+        <Text style={styles.submitButtonText}>{isSubmitting ? "Posting..." : "Post Likey"}</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { padding: 16, gap: 8, paddingBottom: 48 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
+  section: { fontSize: 16, fontWeight: "600", marginTop: 16 },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  rowSelected: { borderColor: "#007aff", backgroundColor: "#eaf4ff" },
+  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 },
+  commentInput: { minHeight: 80, textAlignVertical: "top" },
+  optionRow: { flexDirection: "row", gap: 8 },
+  option: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  optionSelected: { borderColor: "#007aff", backgroundColor: "#eaf4ff" },
+  photoButton: { alignSelf: "flex-start" },
+  photoPreview: { width: 120, height: 120, borderRadius: 8, marginBottom: 4 },
+  submitButton: {
+    marginTop: 24,
+    backgroundColor: "#007aff",
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  submitButtonDisabled: { backgroundColor: "#a9d0ff" },
+  submitButtonText: { color: "#fff", fontWeight: "600" },
+  link: { color: "#007aff", marginVertical: 8 },
+  linkDanger: { color: "#ff3b30" },
+  muted: { color: "#999" },
+  error: { color: "#ff3b30" },
+  success: { color: "#34c759" },
+});
