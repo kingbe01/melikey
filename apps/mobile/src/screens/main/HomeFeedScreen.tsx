@@ -4,17 +4,18 @@ import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, V
 import { useAuth } from "../../auth/AuthContext";
 import { api, type FeedItem, type LikeyTier } from "../../lib/api";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
+import { colors } from "../../theme/colors";
 
 const TIER_LABELS: Record<LikeyTier, string> = {
-  LIKED: "Liked",
-  FINE: "Fine",
-  DISLIKED: "Disliked",
+  LIKED: "Likey",
+  FINE: "Soso",
+  DISLIKED: "No Likey",
 };
 
 const TIER_COLORS: Record<LikeyTier, string> = {
-  LIKED: "#34c759",
-  FINE: "#ff9500",
-  DISLIKED: "#ff3b30",
+  LIKED: colors.success,
+  FINE: colors.warning,
+  DISLIKED: colors.danger,
 };
 
 function formatRelativeTime(iso: string): string {
@@ -75,6 +76,7 @@ export default function HomeFeedScreen() {
 
   return (
     <FlatList
+      style={styles.container}
       contentContainerStyle={styles.list}
       data={feed}
       keyExtractor={(item) => item.id}
@@ -109,22 +111,24 @@ export default function HomeFeedScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: { backgroundColor: colors.background },
   list: { padding: 16, gap: 12, flexGrow: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
   card: {
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     gap: 6,
+    backgroundColor: colors.surface,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  businessName: { fontSize: 16, fontWeight: "600", flexShrink: 1 },
+  businessName: { fontSize: 16, fontWeight: "600", flexShrink: 1, color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  tierBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  comment: { fontSize: 14 },
+  tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
+  comment: { fontSize: 14, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
-  muted: { color: "#999", fontSize: 13 },
-  error: { color: "#ff3b30" },
+  muted: { color: colors.textMuted, fontSize: 13 },
+  error: { color: colors.danger },
 });

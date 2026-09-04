@@ -1,5 +1,6 @@
-import { Button, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import { colors } from "../../theme/colors";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -7,13 +8,30 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{user?.username}</Text>
-      <Text>{user?.email}</Text>
-      <Button title="Log out" onPress={() => logout()} />
+      <Text style={styles.email}>{user?.email}</Text>
+      <TouchableOpacity style={styles.button} onPress={() => logout()}>
+        <Text style={styles.buttonText}>Log out</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  title: { fontSize: 20, fontWeight: "600" },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    backgroundColor: colors.background,
+  },
+  title: { fontSize: 20, fontWeight: "600", color: colors.text },
+  email: { color: colors.textMuted },
+  button: {
+    marginTop: 12,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  buttonText: { color: colors.primaryDark, fontWeight: "600" },
 });

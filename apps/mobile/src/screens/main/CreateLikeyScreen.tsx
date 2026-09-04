@@ -12,13 +12,20 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type Business, type BusinessCategory, type LikeyTier } from "../../lib/api";
+import {
+  api,
+  GOOGLE_SUGGESTION_PREFIX,
+  type Business,
+  type BusinessCategory,
+  type LikeyTier,
+} from "../../lib/api";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
+import { colors } from "../../theme/colors";
 
 const TIERS: { value: LikeyTier; label: string }[] = [
-  { value: "LIKED", label: "Liked" },
-  { value: "FINE", label: "Fine" },
-  { value: "DISLIKED", label: "Disliked" },
+  { value: "LIKED", label: "Likey" },
+  { value: "FINE", label: "Soso" },
+  { value: "DISLIKED", label: "No Likey" },
 ];
 
 const CATEGORIES: { value: BusinessCategory; label: string }[] = [
@@ -88,6 +95,17 @@ export default function CreateLikeyScreen() {
           longitude: coords.lng,
         });
         businessId = business.id;
+      } else if (selectedBusinessId?.startsWith(GOOGLE_SUGGESTION_PREFIX)) {
+        const selected = nearby.find((b) => b.id === selectedBusinessId);
+        if (!selected) return;
+        const { business } = await api.createBusiness(token, {
+          name: selected.name,
+          category: selected.category,
+          latitude: selected.latitude,
+          longitude: selected.longitude,
+          externalPlaceId: selected.externalPlaceId,
+        });
+        businessId = business.id;
       }
       if (!businessId) return;
 
@@ -147,7 +165,12 @@ export default function CreateLikeyScreen() {
                   style={[styles.row, selectedBusinessId === item.id && styles.rowSelected]}
                   onPress={() => setSelectedBusinessId(item.id)}
                 >
-                  <Text>{item.name}</Text>
+                  <View>
+                    <Text>{item.name}</Text>
+                    {item.id.startsWith(GOOGLE_SUGGESTION_PREFIX) ? (
+                      <Text style={styles.suggestedTag}>Suggested nearby</Text>
+                    ) : null}
+                  </View>
                   <Text style={styles.muted}>
                     {item.distanceMiles !== undefined ? `${item.distanceMiles.toFixed(1)} mi` : ""}
                   </Text>
@@ -243,45 +266,55 @@ export default function CreateLikeyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 8, paddingBottom: 48 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
-  section: { fontSize: 16, fontWeight: "600", marginTop: 16 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.background },
+  section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 12,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 10,
     marginBottom: 8,
+    backgroundColor: colors.surface,
   },
-  rowSelected: { borderColor: "#007aff", backgroundColor: "#eaf4ff" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12 },
+  rowSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  suggestedTag: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: colors.surface,
+    color: colors.text,
+  },
   commentInput: { minHeight: 80, textAlignVertical: "top" },
   optionRow: { flexDirection: "row", gap: 8 },
   option: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 14,
+    backgroundColor: colors.surface,
   },
-  optionSelected: { borderColor: "#007aff", backgroundColor: "#eaf4ff" },
+  optionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   photoButton: { alignSelf: "flex-start" },
-  photoPreview: { width: 120, height: 120, borderRadius: 8, marginBottom: 4 },
+  photoPreview: { width: 120, height: 120, borderRadius: 10, marginBottom: 4 },
   submitButton: {
     marginTop: 24,
-    backgroundColor: "#007aff",
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
   },
-  submitButtonDisabled: { backgroundColor: "#a9d0ff" },
-  submitButtonText: { color: "#fff", fontWeight: "600" },
-  link: { color: "#007aff", marginVertical: 8 },
-  linkDanger: { color: "#ff3b30" },
-  muted: { color: "#999" },
-  error: { color: "#ff3b30" },
-  success: { color: "#34c759" },
+  submitButtonDisabled: { backgroundColor: colors.primaryLight },
+  submitButtonText: { color: colors.surface, fontWeight: "600" },
+  link: { color: colors.primary, marginVertical: 8 },
+  linkDanger: { color: colors.danger },
+  muted: { color: colors.textMuted },
+  error: { color: colors.danger },
+  success: { color: colors.success },
 });

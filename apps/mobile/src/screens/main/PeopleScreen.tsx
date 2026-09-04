@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
+import { colors } from "../../theme/colors";
 
 export default function PeopleScreen() {
   const { token } = useAuth();
@@ -134,10 +135,17 @@ export default function PeopleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  section: { fontSize: 16, fontWeight: "600", marginTop: 16, marginBottom: 8 },
+  container: { flex: 1, padding: 16, backgroundColor: colors.background },
+  section: { fontSize: 16, fontWeight: "600", marginTop: 16, marginBottom: 8, color: colors.text },
   searchRow: { flexDirection: "row", gap: 8 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: colors.surface,
+    color: colors.text,
+  },
   searchInput: { flex: 1 },
   searchButton: { justifyContent: "center", paddingHorizontal: 12 },
   row: {
@@ -145,12 +153,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   actions: { flexDirection: "row", gap: 16 },
-  link: { color: "#007aff" },
-  linkDanger: { color: "#ff3b30" },
-  error: { color: "#ff3b30", marginTop: 8 },
-  empty: { color: "#999", paddingVertical: 8 },
+  link: { color: colors.primary },
+  linkDanger: { color: colors.danger },
+  error: { color: colors.danger, marginTop: 8 },
+  empty: { color: colors.textMuted, paddingVertical: 8 },
 });

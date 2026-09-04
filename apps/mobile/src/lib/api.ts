@@ -61,7 +61,12 @@ export interface Business {
   latitude: number;
   longitude: number;
   distanceMiles?: number;
+  externalPlaceId?: string;
 }
+
+// A "google:"-prefixed id marks a Places suggestion that isn't a saved
+// Business yet — selecting one must go through createBusiness first.
+export const GOOGLE_SUGGESTION_PREFIX = "google:";
 
 export type LikeyTier = "LIKED" | "FINE" | "DISLIKED";
 
@@ -142,7 +147,13 @@ export const api = {
 
   createBusiness: (
     token: string,
-    data: { name: string; category: BusinessCategory; latitude: number; longitude: number }
+    data: {
+      name: string;
+      category: BusinessCategory;
+      latitude: number;
+      longitude: number;
+      externalPlaceId?: string;
+    }
   ) =>
     request<{ business: Business }>("/businesses", {
       method: "POST",
