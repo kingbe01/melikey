@@ -1,7 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,43 +8,40 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
-import { useAuth } from "../../auth/AuthContext";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
+import { api } from "../../lib/api";
 import { colors } from "../../theme/colors";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
+type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 
-export default function LoginScreen({ navigation }: Props) {
-  const { login } = useAuth();
+export default function ForgotPasswordScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = !isSubmitting && !!email && !!password;
+  const canSubmit = !isSubmitting && !!email;
 
   const onSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(email.trim(), password);
+      await api.forgotPassword(email.trim());
+      navigation.navigate("ResetPassword", { email: email.trim() });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      setError(e instanceof Error ? e.message : "Couldn't send reset code");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Log in</Text>
+        <Text style={styles.title}>Forgot password</Text>
+        <Text style={styles.subtitle}>
+          Enter your account email and we'll send you a 6-digit code to reset your password.
+        </Text>
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -55,27 +51,16 @@ export default function LoginScreen({ navigation }: Props) {
           value={email}
           onChangeText={setEmail}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <TouchableOpacity
           style={[styles.button, !canSubmit && styles.buttonDisabled]}
           onPress={onSubmit}
           disabled={!canSubmit}
         >
-          <Text style={styles.buttonText}>{isSubmitting ? "Logging in..." : "Log in"}</Text>
+          <Text style={styles.buttonText}>{isSubmitting ? "Sending..." : "Send reset code"}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-          <Text style={styles.link}>Forgot password?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-          <Text style={styles.link}>Need an account? Sign up</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.link}>Back to log in</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -85,8 +70,8 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
-  logo: { width: 220, height: 126, alignSelf: "center", marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: "600", marginBottom: 12, color: colors.text, textAlign: "center" },
+  title: { fontSize: 24, fontWeight: "600", color: colors.text, textAlign: "center" },
+  subtitle: { color: colors.textMuted, textAlign: "center", marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

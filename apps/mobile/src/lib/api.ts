@@ -134,6 +134,18 @@ export const api = {
 
   me: (token: string) => request<{ user: AuthUser }>("/auth/me", { token }),
 
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (email: string, code: string, password: string) =>
+    request<AuthResponse>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, code, password }),
+    }),
+
   searchUsers: (token: string, q: string) =>
     request<{ users: AuthUser[] }>(`/users/search?q=${encodeURIComponent(q)}`, { token }),
 

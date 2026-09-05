@@ -1,7 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,55 +8,53 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
+type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 
-export default function LoginScreen({ navigation }: Props) {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
+export default function ResetPasswordScreen({ route }: Props) {
+  const { email } = route.params;
+  const { resetPassword } = useAuth();
+
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = !isSubmitting && !!email && !!password;
+  const canSubmit = !isSubmitting && code.length === 6 && password.length >= 8;
 
   const onSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(email.trim(), password);
+      await resetPassword(email, code.trim(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      setError(e instanceof Error ? e.message : "Couldn't reset password");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Log in</Text>
+        <Text style={styles.title}>Enter your code</Text>
+        <Text style={styles.subtitle}>We sent a 6-digit code to {email}.</Text>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="6-digit code"
           placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
+          keyboardType="number-pad"
+          maxLength={6}
+          value={code}
+          onChangeText={setCode}
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="New password (min 8 characters)"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
           value={password}
@@ -69,13 +66,7 @@ export default function LoginScreen({ navigation }: Props) {
           onPress={onSubmit}
           disabled={!canSubmit}
         >
-          <Text style={styles.buttonText}>{isSubmitting ? "Logging in..." : "Log in"}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-          <Text style={styles.link}>Forgot password?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-          <Text style={styles.link}>Need an account? Sign up</Text>
+          <Text style={styles.buttonText}>{isSubmitting ? "Resetting..." : "Reset password"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -85,8 +76,8 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
-  logo: { width: 220, height: 126, alignSelf: "center", marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: "600", marginBottom: 12, color: colors.text, textAlign: "center" },
+  title: { fontSize: 24, fontWeight: "600", color: colors.text, textAlign: "center" },
+  subtitle: { color: colors.textMuted, textAlign: "center", marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -99,5 +90,4 @@ const styles = StyleSheet.create({
   button: { backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center" },
   buttonDisabled: { backgroundColor: colors.primaryLight },
   buttonText: { color: colors.surface, fontWeight: "600" },
-  link: { color: colors.primary, marginTop: 12, textAlign: "center" },
 });
