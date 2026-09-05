@@ -88,6 +88,23 @@ export const PLACE_SUGGESTION_PREFIX = "suggestion:";
 export type LikeyTier = "LIKED" | "FINE" | "DISLIKED";
 export type MyLikeysSort = "recent" | "oldest" | "tier" | "business";
 
+export interface LikeyFilters {
+  q?: string;
+  category?: BusinessCategory;
+  tier?: LikeyTier;
+  sort?: MyLikeysSort;
+}
+
+function buildLikeyFilterQuery(filters: LikeyFilters): string {
+  const params = new URLSearchParams();
+  if (filters.q) params.set("q", filters.q);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.tier) params.set("tier", filters.tier);
+  if (filters.sort) params.set("sort", filters.sort);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export interface Likey {
   id: string;
   tier: LikeyTier;
@@ -214,21 +231,11 @@ export const api = {
 
   followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
 
-  userLikeys: (token: string, userId: string) =>
-    request<{ likeys: Likey[] }>(`/likeys/user/${userId}`, { token }),
+  userLikeys: (token: string, userId: string, filters: LikeyFilters = {}) =>
+    request<{ likeys: Likey[] }>(`/likeys/user/${userId}${buildLikeyFilterQuery(filters)}`, { token }),
 
-  myLikeys: (
-    token: string,
-    filters: { q?: string; category?: BusinessCategory; tier?: LikeyTier; sort?: MyLikeysSort } = {}
-  ) => {
-    const params = new URLSearchParams();
-    if (filters.q) params.set("q", filters.q);
-    if (filters.category) params.set("category", filters.category);
-    if (filters.tier) params.set("tier", filters.tier);
-    if (filters.sort) params.set("sort", filters.sort);
-    const qs = params.toString();
-    return request<{ likeys: Likey[] }>(`/likeys/mine${qs ? `?${qs}` : ""}`, { token });
-  },
+  myLikeys: (token: string, filters: LikeyFilters = {}) =>
+    request<{ likeys: Likey[] }>(`/likeys/mine${buildLikeyFilterQuery(filters)}`, { token }),
 
   updateLikey: (
     token: string,

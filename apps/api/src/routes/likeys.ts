@@ -16,24 +16,19 @@ const createSchema = z.object({
 
 const TIER_RANK = { LIKED: 0, FINE: 1, DISLIKED: 2 } as const;
 
-const mineSchema = z.object({
+const likeyFiltersSchema = z.object({
   q: z.string().optional(),
   category: z.enum(["restaurant", "entertainment"]).optional(),
   tier: z.enum(["LIKED", "FINE", "DISLIKED"]).optional(),
   sort: z.enum(["recent", "oldest", "tier", "business"]).optional().default("recent"),
 });
 
-router.get("/mine", async (req, res) => {
-  const parsed = mineSchema.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
-  }
-  const { q, category, tier, sort } = parsed.data;
+async function findLikeysForUser(userId: string, filters: z.infer<typeof likeyFiltersSchema>) {
+  const { q, category, tier, sort } = filters;
 
   const results = await prisma.likey.findMany({
     where: {
-      userId: req.userId,
+      userId,
       tier,
       business: { category },
       ...(q
@@ -49,14 +44,29 @@ router.get("/mine", async (req, res) => {
           : { createdAt: "desc" },
   });
 
-  const sorted = sort === "tier" ? [...results].sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier]) : results;
+  return sort === "tier" ? [...results].sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier]) : results;
+}
 
-  res.json({ likeys: sorted });
+router.get("/mine", async (req, res) => {
+  const parsed = likeyFiltersSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const likeys = await findLikeysForUser(req.userId!, parsed.data);
+  res.json({ likeys });
 });
 
 // Only visible to someone the target user has approved as a follower —
 // mirrors the feed's "followed friends only" model, not a public profile.
 router.get("/user/:id", async (req, res) => {
+  const parsed = likeyFiltersSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
   const targetId = req.params.id;
 
   if (targetId !== req.userId) {
@@ -69,12 +79,7 @@ router.get("/user/:id", async (req, res) => {
     }
   }
 
-  const likeys = await prisma.likey.findMany({
-    where: { userId: targetId },
-    include: { business: true },
-    orderBy: { createdAt: "desc" },
-  });
-
+  const likeys = await findLikeysForUser(targetId, parsed.data);
   res.json({ likeys });
 });
 

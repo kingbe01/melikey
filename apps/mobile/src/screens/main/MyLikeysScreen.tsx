@@ -18,29 +18,10 @@ import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSo
 import { compressImageToBase64 } from "../../lib/compressImage";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
+import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
-
-const CATEGORY_FILTERS: { value: BusinessCategory | null; label: string }[] = [
-  { value: null, label: "All" },
-  { value: "restaurant", label: "Restaurant" },
-  { value: "entertainment", label: "Entertainment" },
-];
-
-const TIER_FILTERS: { value: LikeyTier | null; label: string }[] = [
-  { value: null, label: "All" },
-  { value: "LIKED", label: "Likey" },
-  { value: "FINE", label: "Soso" },
-  { value: "DISLIKED", label: "No Likey" },
-];
-
-const SORTS: { value: MyLikeysSort; label: string }[] = [
-  { value: "recent", label: "Recent" },
-  { value: "oldest", label: "Oldest" },
-  { value: "tier", label: "Tier" },
-  { value: "business", label: "Place name" },
-];
 
 const COMMENT_MAX = 200;
 
