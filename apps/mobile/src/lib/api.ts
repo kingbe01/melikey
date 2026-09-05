@@ -203,6 +203,10 @@ export const api = {
   feed: (token: string, lat: number, lng: number) =>
     request<{ feed: FeedItem[] }>(`/feed?lat=${lat}&lng=${lng}`, { token }),
 
+  following: (token: string) => request<{ following: AuthUser[] }>("/follows/following", { token }),
+
+  followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
+
   myLikeys: (
     token: string,
     filters: { q?: string; category?: BusinessCategory; tier?: LikeyTier; sort?: MyLikeysSort } = {}

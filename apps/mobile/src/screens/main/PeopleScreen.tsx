@@ -1,6 +1,15 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
 import { colors } from "../../theme/colors";
@@ -11,32 +20,35 @@ export default function PeopleScreen() {
   const [results, setResults] = useState<AuthUser[]>([]);
   const [incoming, setIncoming] = useState<IncomingFollowRequest[]>([]);
   const [outgoing, setOutgoing] = useState<OutgoingFollowRequest[]>([]);
+  const [following, setFollowing] = useState<AuthUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  const loadRequests = useCallback(async () => {
+  const loadConnections = useCallback(async () => {
     if (!token) return;
-    setIsLoadingRequests(true);
+    setIsLoadingConnections(true);
     try {
-      const [inRes, outRes] = await Promise.all([
+      const [inRes, outRes, followingRes] = await Promise.all([
         api.incomingRequests(token),
         api.outgoingRequests(token),
+        api.following(token),
       ]);
       setIncoming(inRes.requests);
       setOutgoing(outRes.requests);
+      setFollowing(followingRes.following);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load requests");
     } finally {
-      setIsLoadingRequests(false);
+      setIsLoadingConnections(false);
     }
   }, [token]);
 
   useFocusEffect(
     useCallback(() => {
-      loadRequests();
-    }, [loadRequests])
+      loadConnections();
+    }, [loadConnections])
   );
 
   const onSearch = async () => {
@@ -60,7 +72,7 @@ export default function PeopleScreen() {
     try {
       await api.sendFollowRequest(token, followeeId);
       setResults((prev) => prev.filter((u) => u.id !== followeeId));
-      await loadRequests();
+      await loadConnections();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not send request");
     } finally {
@@ -73,7 +85,7 @@ export default function PeopleScreen() {
     setPendingId(id);
     try {
       await api.approveRequest(token, id);
-      await loadRequests();
+      await loadConnections();
     } finally {
       setPendingId(null);
     }
@@ -84,14 +96,14 @@ export default function PeopleScreen() {
     setPendingId(id);
     try {
       await api.denyRequest(token, id);
-      await loadRequests();
+      await loadConnections();
     } finally {
       setPendingId(null);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Find people</Text>
       <View style={styles.searchRow}>
         <TextInput
@@ -120,6 +132,7 @@ export default function PeopleScreen() {
 
       <FlatList
         data={results}
+        scrollEnabled={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -144,9 +157,10 @@ export default function PeopleScreen() {
       />
 
       <Text style={styles.section}>Requests to approve</Text>
-      {isLoadingRequests ? <ActivityIndicator style={styles.loadingIndicator} /> : null}
+      {isLoadingConnections ? <ActivityIndicator style={styles.loadingIndicator} /> : null}
       <FlatList
         data={incoming}
+        scrollEnabled={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -185,26 +199,41 @@ export default function PeopleScreen() {
             </View>
           </View>
         )}
-        ListEmptyComponent={!isLoadingRequests ? <Text style={styles.empty}>No pending requests</Text> : null}
+        ListEmptyComponent={!isLoadingConnections ? <Text style={styles.empty}>No pending requests</Text> : null}
       />
 
       <Text style={styles.section}>Sent, awaiting approval</Text>
       <FlatList
         data={outgoing}
+        scrollEnabled={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.rowText}>{item.followee.username}</Text>
           </View>
         )}
-        ListEmptyComponent={!isLoadingRequests ? <Text style={styles.empty}>Nothing pending</Text> : null}
+        ListEmptyComponent={!isLoadingConnections ? <Text style={styles.empty}>Nothing pending</Text> : null}
       />
-    </View>
+
+      <Text style={styles.section}>Following</Text>
+      <FlatList
+        data={following}
+        scrollEnabled={false}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <Text style={styles.rowText}>{item.username}</Text>
+          </View>
+        )}
+        ListEmptyComponent={!isLoadingConnections ? <Text style={styles.empty}>Not following anyone yet</Text> : null}
+      />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 16, paddingBottom: 48 },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, marginBottom: 8, color: colors.text },
   loadingIndicator: { marginBottom: 8 },
   searchRow: { flexDirection: "row", gap: 8 },
