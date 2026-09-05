@@ -98,6 +98,8 @@ export default function PeopleScreen() {
           style={[styles.input, styles.searchInput]}
           placeholder="Search by username or email"
           autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={onSearch}

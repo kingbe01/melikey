@@ -61,6 +61,8 @@ export default function SignupScreen({ navigation }: Props) {
           placeholder="Username"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
           value={username}
           onChangeText={setUsername}
         />
