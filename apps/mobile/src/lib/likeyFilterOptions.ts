@@ -9,7 +9,7 @@ export const CATEGORY_FILTERS: { value: BusinessCategory | null; label: string }
 export const TIER_FILTERS: { value: LikeyTier | null; label: string }[] = [
   { value: null, label: "All" },
   { value: "LIKED", label: "Likey" },
-  { value: "FINE", label: "Soso" },
+  { value: "FINE", label: "Kinda Likey" },
   { value: "DISLIKED", label: "No Likey" },
 ];
 

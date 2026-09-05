@@ -28,7 +28,7 @@ import { colors } from "../../theme/colors";
 
 const TIERS: { value: LikeyTier; label: string }[] = [
   { value: "LIKED", label: "Likey" },
-  { value: "FINE", label: "Soso" },
+  { value: "FINE", label: "Kinda Likey" },
   { value: "DISLIKED", label: "No Likey" },
 ];
 

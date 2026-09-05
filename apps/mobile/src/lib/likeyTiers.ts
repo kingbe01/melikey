@@ -3,7 +3,7 @@ import type { LikeyTier } from "./api";
 
 export const TIER_LABELS: Record<LikeyTier, string> = {
   LIKED: "Likey",
-  FINE: "Soso",
+  FINE: "Kinda Likey",
   DISLIKED: "No Likey",
 };
 
