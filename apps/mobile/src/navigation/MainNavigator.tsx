@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { Image, StyleSheet } from "react-native";
 import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
 import HomeFeedScreen from "../screens/main/HomeFeedScreen";
+import MyLikeysScreen from "../screens/main/MyLikeysScreen";
 import PeopleScreen from "../screens/main/PeopleScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
 import { colors } from "../theme/colors";
@@ -11,6 +12,7 @@ import { colors } from "../theme/colors";
 export type MainTabParamList = {
   Feed: undefined;
   CreateLikey: undefined;
+  MyLikeys: undefined;
   People: undefined;
   Profile: undefined;
 };
@@ -20,6 +22,7 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 const TAB_ICONS: Record<keyof MainTabParamList, { focused: IoniconName; unfocused: IoniconName }> = {
   Feed: { focused: "location", unfocused: "location-outline" },
   CreateLikey: { focused: "add-circle", unfocused: "add-circle-outline" },
+  MyLikeys: { focused: "albums", unfocused: "albums-outline" },
   People: { focused: "people", unfocused: "people-outline" },
   Profile: { focused: "person-circle", unfocused: "person-circle-outline" },
 };
@@ -50,6 +53,7 @@ export default function MainNavigator() {
     >
       <Tab.Screen name="Feed" component={HomeFeedScreen} options={{ title: "Places" }} />
       <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post a Likey" }} />
+      <Tab.Screen name="MyLikeys" component={MyLikeysScreen} options={{ title: "My Likeys" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Me" }} />
     </Tab.Navigator>

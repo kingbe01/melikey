@@ -2,22 +2,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type FeedItem, type LikeyTier } from "../../lib/api";
+import { api, type FeedItem } from "../../lib/api";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import { colors } from "../../theme/colors";
-
-const TIER_LABELS: Record<LikeyTier, string> = {
-  LIKED: "Likey",
-  FINE: "Soso",
-  DISLIKED: "No Likey",
-};
-
-const TIER_COLORS: Record<LikeyTier, string> = {
-  LIKED: colors.success,
-  FINE: colors.warning,
-  DISLIKED: colors.danger,
-};
 
 export default function HomeFeedScreen() {
   const { token } = useAuth();

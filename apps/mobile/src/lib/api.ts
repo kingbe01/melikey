@@ -69,6 +69,7 @@ export interface Business {
 export const GOOGLE_SUGGESTION_PREFIX = "google:";
 
 export type LikeyTier = "LIKED" | "FINE" | "DISLIKED";
+export type MyLikeysSort = "recent" | "oldest" | "tier" | "business";
 
 export interface Likey {
   id: string;
@@ -175,5 +176,30 @@ export const api = {
   feed: (token: string, lat: number, lng: number) =>
     request<{ feed: FeedItem[] }>(`/feed?lat=${lat}&lng=${lng}`, { token }),
 
-  myLikeys: (token: string) => request<{ likeys: Likey[] }>("/likeys/mine", { token }),
+  myLikeys: (
+    token: string,
+    filters: { q?: string; category?: BusinessCategory; tier?: LikeyTier; sort?: MyLikeysSort } = {}
+  ) => {
+    const params = new URLSearchParams();
+    if (filters.q) params.set("q", filters.q);
+    if (filters.category) params.set("category", filters.category);
+    if (filters.tier) params.set("tier", filters.tier);
+    if (filters.sort) params.set("sort", filters.sort);
+    const qs = params.toString();
+    return request<{ likeys: Likey[] }>(`/likeys/mine${qs ? `?${qs}` : ""}`, { token });
+  },
+
+  updateLikey: (
+    token: string,
+    id: string,
+    data: { tier?: LikeyTier; comment?: string | null; photoBase64?: string | null }
+  ) =>
+    request<{ likey: Likey }>(`/likeys/${id}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify(data),
+    }),
+
+  deleteLikey: (token: string, id: string) =>
+    request<void>(`/likeys/${id}`, { method: "DELETE", token }),
 };
