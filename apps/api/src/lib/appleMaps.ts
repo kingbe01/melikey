@@ -70,11 +70,11 @@ function categorize(poiCategory: string | undefined): "restaurant" | "entertainm
 // actual endpoints. Access tokens last ~30min, so cache and reuse.
 let cachedAccessToken: { token: string; expiresAt: number } | null = null;
 
-// Some hosts (Render's dashboard included) preserve real newlines when you
-// paste a multi-line env var; a flat .env file needs them escaped as a
-// literal "\n" instead. Accept either so the same code works in both.
-function normalizePrivateKey(key: string): string {
-  return key.includes("\\n") ? key.replace(/\\n/g, "\n") : key;
+// Stored as base64 of the raw .p8 file — a multi-line PEM pasted through a
+// dashboard text field is an easy way to silently lose/mangle newlines;
+// base64 has no line breaks or special characters to corrupt in transit.
+function decodePrivateKey(base64Key: string): string {
+  return Buffer.from(base64Key, "base64").toString("utf8");
 }
 
 async function getAccessToken(): Promise<string | null> {
@@ -87,7 +87,7 @@ async function getAccessToken(): Promise<string | null> {
     return cachedAccessToken.token;
   }
 
-  const mapsToken = jwt.sign({}, normalizePrivateKey(rawPrivateKey), {
+  const mapsToken = jwt.sign({}, decodePrivateKey(rawPrivateKey), {
     algorithm: "ES256",
     issuer: teamId,
     expiresIn: "30m",
