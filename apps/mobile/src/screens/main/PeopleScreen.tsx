@@ -140,6 +140,7 @@ export default function PeopleScreen() {
       <FlatList
         data={results}
         scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -168,6 +169,7 @@ export default function PeopleScreen() {
       <FlatList
         data={incoming}
         scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -213,6 +215,7 @@ export default function PeopleScreen() {
       <FlatList
         data={outgoing}
         scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -226,6 +229,7 @@ export default function PeopleScreen() {
       <FlatList
         data={following}
         scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.row} onPress={() => setViewingFriend(item)}>

@@ -186,6 +186,7 @@ export default function CreateLikeyScreen() {
               data={nearby}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.row, selectedBusinessId === item.id && styles.rowSelected]}
