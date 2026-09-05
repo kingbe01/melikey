@@ -75,6 +75,7 @@ export interface Likey {
   tier: LikeyTier;
   comment: string | null;
   photoUrl: string | null;
+  createdAt: string;
   business: Business;
 }
 
@@ -173,4 +174,6 @@ export const api = {
 
   feed: (token: string, lat: number, lng: number) =>
     request<{ feed: FeedItem[] }>(`/feed?lat=${lat}&lng=${lng}`, { token }),
+
+  myLikeys: (token: string) => request<{ likeys: Likey[] }>("/likeys/mine", { token }),
 };

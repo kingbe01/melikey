@@ -14,6 +14,15 @@ const createSchema = z.object({
   photoBase64: z.string().max(2_000_000).optional(),
 });
 
+router.get("/mine", async (req, res) => {
+  const likeys = await prisma.likey.findMany({
+    where: { userId: req.userId },
+    include: { business: true },
+    orderBy: { createdAt: "desc" },
+  });
+  res.json({ likeys });
+});
+
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {

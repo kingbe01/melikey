@@ -4,6 +4,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,6 +47,7 @@ export default function CreateLikeyScreen() {
 
   const [mode, setMode] = useState<"select" | "manual">("select");
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [isLocationExpanded, setIsLocationExpanded] = useState(true);
   const [manualName, setManualName] = useState("");
   const [manualCategory, setManualCategory] = useState<BusinessCategory | null>(null);
 
@@ -83,6 +87,7 @@ export default function CreateLikeyScreen() {
 
   const onSubmit = async () => {
     if (!token || !coords || !tier) return;
+    Keyboard.dismiss();
     setSubmitError(null);
     setIsSubmitting(true);
     try {
@@ -119,6 +124,7 @@ export default function CreateLikeyScreen() {
       setSubmitSuccess(true);
       setMode("select");
       setSelectedBusinessId(null);
+      setIsLocationExpanded(true);
       setManualName("");
       setManualCategory(null);
       setTier(null);
@@ -149,9 +155,21 @@ export default function CreateLikeyScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Where are you?</Text>
-      {mode === "select" ? (
+      {!isLocationExpanded ? (
+        <TouchableOpacity style={styles.row} onPress={() => setIsLocationExpanded(true)}>
+          <Text style={styles.confirmedPlaceName}>
+            {mode === "select" ? nearby.find((b) => b.id === selectedBusinessId)?.name : manualName}
+          </Text>
+          <Text style={styles.link}>Change</Text>
+        </TouchableOpacity>
+      ) : mode === "select" ? (
         <>
           {isLoadingNearby ? (
             <ActivityIndicator />
@@ -163,7 +181,10 @@ export default function CreateLikeyScreen() {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.row, selectedBusinessId === item.id && styles.rowSelected]}
-                  onPress={() => setSelectedBusinessId(item.id)}
+                  onPress={() => {
+                    setSelectedBusinessId(item.id);
+                    setIsLocationExpanded(false);
+                  }}
                 >
                   <View>
                     <Text>{item.name}</Text>
@@ -202,6 +223,11 @@ export default function CreateLikeyScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          {manualName.trim() !== "" && manualCategory !== null ? (
+            <TouchableOpacity onPress={() => setIsLocationExpanded(false)}>
+              <Text style={styles.link}>Use this place</Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity onPress={() => setMode("select")}>
             <Text style={styles.link}>Pick from nearby places instead</Text>
           </TouchableOpacity>
@@ -261,7 +287,8 @@ export default function CreateLikeyScreen() {
       >
         <Text style={styles.submitButtonText}>{isSubmitting ? "Posting..." : "Post Likey"}</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -281,6 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   rowSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  confirmedPlaceName: { fontWeight: "600", color: colors.text },
   suggestedTag: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   input: {
     borderWidth: 1,
