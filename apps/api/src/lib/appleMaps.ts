@@ -70,17 +70,24 @@ function categorize(poiCategory: string | undefined): "restaurant" | "entertainm
 // actual endpoints. Access tokens last ~30min, so cache and reuse.
 let cachedAccessToken: { token: string; expiresAt: number } | null = null;
 
+// Some hosts (Render's dashboard included) preserve real newlines when you
+// paste a multi-line env var; a flat .env file needs them escaped as a
+// literal "\n" instead. Accept either so the same code works in both.
+function normalizePrivateKey(key: string): string {
+  return key.includes("\\n") ? key.replace(/\\n/g, "\n") : key;
+}
+
 async function getAccessToken(): Promise<string | null> {
   const teamId = process.env.APPLE_MAPS_TEAM_ID;
   const keyId = process.env.APPLE_MAPS_KEY_ID;
-  const privateKey = process.env.APPLE_MAPS_PRIVATE_KEY;
-  if (!teamId || !keyId || !privateKey) return null;
+  const rawPrivateKey = process.env.APPLE_MAPS_PRIVATE_KEY;
+  if (!teamId || !keyId || !rawPrivateKey) return null;
 
   if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now()) {
     return cachedAccessToken.token;
   }
 
-  const mapsToken = jwt.sign({}, privateKey.replace(/\\n/g, "\n"), {
+  const mapsToken = jwt.sign({}, normalizePrivateKey(rawPrivateKey), {
     algorithm: "ES256",
     issuer: teamId,
     expiresIn: "30m",
