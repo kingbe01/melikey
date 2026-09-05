@@ -21,7 +21,7 @@ router.get("/search", async (req, res) => {
       id: { not: req.userId },
       OR: [
         { username: { contains: q, mode: "insensitive" } },
-        { email: { equals: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
       ],
     },
     select: { id: true, username: true, email: true },
