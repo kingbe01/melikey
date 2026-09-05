@@ -54,6 +54,30 @@ router.get("/mine", async (req, res) => {
   res.json({ likeys: sorted });
 });
 
+// Only visible to someone the target user has approved as a follower —
+// mirrors the feed's "followed friends only" model, not a public profile.
+router.get("/user/:id", async (req, res) => {
+  const targetId = req.params.id;
+
+  if (targetId !== req.userId) {
+    const follow = await prisma.follow.findUnique({
+      where: { followerId_followeeId: { followerId: req.userId!, followeeId: targetId } },
+    });
+    if (!follow || follow.status !== "APPROVED") {
+      res.status(403).json({ error: "You must follow this user to see their Likeys" });
+      return;
+    }
+  }
+
+  const likeys = await prisma.likey.findMany({
+    where: { userId: targetId },
+    include: { business: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json({ likeys });
+});
+
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {

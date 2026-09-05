@@ -14,16 +14,10 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import {
-  api,
-  type Business,
-  type BusinessCategory,
-  type Likey,
-  type LikeyTier,
-  type MyLikeysSort,
-} from "../../lib/api";
+import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { compressImageToBase64 } from "../../lib/compressImage";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 
@@ -47,14 +41,7 @@ const SORTS: { value: MyLikeysSort; label: string }[] = [
   { value: "business", label: "Place name" },
 ];
 
-const TIER_RANK: Record<LikeyTier, number> = { LIKED: 0, FINE: 1, DISLIKED: 2 };
-
 const COMMENT_MAX = 200;
-
-interface BusinessGroup {
-  business: Business;
-  items: Likey[];
-}
 
 export default function MyLikeysScreen() {
   const { token } = useAuth();
@@ -103,40 +90,7 @@ export default function MyLikeysScreen() {
     }, [load])
   );
 
-  // One listing per business, most-recent visit first within it; sort picks
-  // which listing surfaces first (see cases below), not the visit order.
-  const groups = useMemo<BusinessGroup[]>(() => {
-    const byBusiness = new Map<string, BusinessGroup>();
-    for (const likey of likeys) {
-      const key = likey.business.id;
-      if (!byBusiness.has(key)) byBusiness.set(key, { business: likey.business, items: [] });
-      byBusiness.get(key)!.items.push(likey);
-    }
-
-    const result = Array.from(byBusiness.values()).map((group) => ({
-      ...group,
-      items: [...group.items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    }));
-
-    const mostRecentTime = (g: BusinessGroup) => new Date(g.items[0].createdAt).getTime();
-    const oldestTime = (g: BusinessGroup) => new Date(g.items[g.items.length - 1].createdAt).getTime();
-    const bestTierRank = (g: BusinessGroup) => Math.min(...g.items.map((i) => TIER_RANK[i.tier]));
-
-    switch (sort) {
-      case "oldest":
-        result.sort((a, b) => oldestTime(a) - oldestTime(b));
-        break;
-      case "tier":
-        result.sort((a, b) => bestTierRank(a) - bestTierRank(b) || mostRecentTime(b) - mostRecentTime(a));
-        break;
-      case "business":
-        result.sort((a, b) => a.business.name.localeCompare(b.business.name));
-        break;
-      default:
-        result.sort((a, b) => mostRecentTime(b) - mostRecentTime(a));
-    }
-    return result;
-  }, [likeys, sort]);
+  const groups = useMemo<BusinessGroup[]>(() => groupLikeysByPlace(likeys, sort), [likeys, sort]);
 
   const toggleExpanded = (businessId: string) => {
     setExpandedIds((prev) => {

@@ -207,6 +207,9 @@ export const api = {
 
   followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
 
+  userLikeys: (token: string, userId: string) =>
+    request<{ likeys: Likey[] }>(`/likeys/user/${userId}`, { token }),
+
   myLikeys: (
     token: string,
     filters: { q?: string; category?: BusinessCategory; tier?: LikeyTier; sort?: MyLikeysSort } = {}

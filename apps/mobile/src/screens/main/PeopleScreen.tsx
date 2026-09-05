@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
@@ -13,9 +14,11 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
 import { colors } from "../../theme/colors";
+import FriendLikeysView from "./FriendLikeysView";
 
 export default function PeopleScreen() {
   const { token } = useAuth();
+  const [viewingFriend, setViewingFriend] = useState<AuthUser | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AuthUser[]>([]);
   const [incoming, setIncoming] = useState<IncomingFollowRequest[]>([]);
@@ -101,6 +104,10 @@ export default function PeopleScreen() {
       setPendingId(null);
     }
   };
+
+  if (viewingFriend) {
+    return <FriendLikeysView user={viewingFriend} onBack={() => setViewingFriend(null)} />;
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -221,9 +228,10 @@ export default function PeopleScreen() {
         scrollEnabled={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => setViewingFriend(item)}>
             <Text style={styles.rowText}>{item.username}</Text>
-          </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
         )}
         ListEmptyComponent={!isLoadingConnections ? <Text style={styles.empty}>Not following anyone yet</Text> : null}
       />
