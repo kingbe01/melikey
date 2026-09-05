@@ -22,6 +22,7 @@ import {
   type LikeyTier,
   type MyLikeysSort,
 } from "../../lib/api";
+import { compressImageToBase64 } from "../../lib/compressImage";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
@@ -157,14 +158,14 @@ export default function MyLikeysScreen() {
   const cancelEdit = () => setEditingId(null);
 
   const pickEditPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.5,
-      base64: true,
-    });
-    if (!result.canceled && result.assets[0]?.base64) {
-      setDraftPhotoBase64(result.assets[0].base64);
-      setDraftPhotoUrl(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
+    const asset = result.canceled ? null : result.assets[0];
+    if (asset) {
+      const base64 = await compressImageToBase64(asset.uri, asset.width, asset.height);
+      if (base64) {
+        setDraftPhotoBase64(base64);
+        setDraftPhotoUrl(`data:image/jpeg;base64,${base64}`);
+      }
     }
   };
 
