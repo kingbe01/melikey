@@ -8,7 +8,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bradking.melikey"
+      "bundleIdentifier": "com.bradking.melikey",
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
