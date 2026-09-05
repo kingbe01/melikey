@@ -37,7 +37,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Forgot password</Text>
         <Text style={styles.subtitle}>
           Enter your account email and we'll send you a 6-digit code to reset your password.
@@ -69,6 +69,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
   title: { fontSize: 24, fontWeight: "600", color: colors.text, textAlign: "center" },
   subtitle: { color: colors.textMuted, textAlign: "center", marginBottom: 8 },

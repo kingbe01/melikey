@@ -159,7 +159,7 @@ export default function CreateLikeyScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Where are you?</Text>
       {!isLocationExpanded ? (
         <TouchableOpacity style={styles.row} onPress={() => setIsLocationExpanded(true)}>
@@ -293,6 +293,7 @@ export default function CreateLikeyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: { padding: 16, gap: 8, paddingBottom: 48 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.background },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },

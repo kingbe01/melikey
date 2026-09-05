@@ -44,7 +44,7 @@ export default function SignupScreen({ navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>Sign up</Text>
         <TextInput
@@ -92,6 +92,7 @@ export default function SignupScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
   logo: { width: 220, height: 126, alignSelf: "center", marginBottom: 12 },
   title: { fontSize: 24, fontWeight: "600", marginBottom: 12, color: colors.text, textAlign: "center" },
