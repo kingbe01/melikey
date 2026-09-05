@@ -40,7 +40,7 @@ const CATEGORIES: { value: BusinessCategory; label: string }[] = [
 const COMMENT_MAX = 200;
 
 export default function CreateLikeyScreen() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [nearby, setNearby] = useState<Business[]>([]);
@@ -66,11 +66,11 @@ export default function CreateLikeyScreen() {
     if (!token || !coords) return;
     setIsLoadingNearby(true);
     api
-      .nearbyBusinesses(token, coords.lat, coords.lng)
+      .nearbyBusinesses(token, coords.lat, coords.lng, user?.defaultRadiusMiles)
       .then((res) => setNearby(res.businesses))
       .catch(() => setNearby([]))
       .finally(() => setIsLoadingNearby(false));
-  }, [token, coords]);
+  }, [token, coords, user?.defaultRadiusMiles]);
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });

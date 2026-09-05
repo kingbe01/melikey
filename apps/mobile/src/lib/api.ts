@@ -55,6 +55,7 @@ export interface AuthUser {
   id: string;
   email: string;
   username: string;
+  defaultRadiusMiles: number;
 }
 
 export interface AuthResponse {
@@ -155,6 +156,13 @@ export const api = {
 
   me: (token: string) => request<{ user: AuthUser }>("/auth/me", { token }),
 
+  updateSettings: (token: string, defaultRadiusMiles: number) =>
+    request<{ user: AuthUser }>("/auth/me", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ defaultRadiusMiles }),
+    }),
+
   forgotPassword: (email: string) =>
     request<{ message: string }>("/auth/forgot-password", {
       method: "POST",
@@ -189,9 +197,9 @@ export const api = {
   denyRequest: (token: string, id: string) =>
     request(`/follows/requests/${id}/deny`, { method: "POST", token }),
 
-  nearbyBusinesses: (token: string, lat: number, lng: number) =>
+  nearbyBusinesses: (token: string, lat: number, lng: number, radiusMiles?: number) =>
     request<{ businesses: Business[] }>(
-      `/businesses/nearby?lat=${lat}&lng=${lng}`,
+      `/businesses/nearby?lat=${lat}&lng=${lng}${radiusMiles ? `&radiusMiles=${radiusMiles}` : ""}`,
       { token }
     ),
 
@@ -224,8 +232,11 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  feed: (token: string, lat: number, lng: number) =>
-    request<{ feed: FeedItem[] }>(`/feed?lat=${lat}&lng=${lng}`, { token }),
+  feed: (token: string, lat: number, lng: number, radiusMiles?: number) =>
+    request<{ feed: FeedItem[] }>(
+      `/feed?lat=${lat}&lng=${lng}${radiusMiles ? `&radiusMiles=${radiusMiles}` : ""}`,
+      { token }
+    ),
 
   geocode: (token: string, q: string) =>
     request<{ label: string; latitude: number; longitude: number }>(

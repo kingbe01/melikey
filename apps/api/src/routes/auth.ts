@@ -53,7 +53,7 @@ router.post("/signup", async (req, res) => {
   const token = signToken(user.id);
   res.status(201).json({
     token,
-    user: { id: user.id, email: user.email, username: user.username },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
   });
 });
 
@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
   const token = signToken(user.id);
   res.json({
     token,
-    user: { id: user.id, email: user.email, username: user.username },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
   });
 });
 
@@ -157,19 +157,39 @@ router.post("/reset-password", async (req, res) => {
   const token = signToken(user.id);
   res.json({
     token,
-    user: { id: user.id, email: user.email, username: user.username },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
   });
 });
 
 router.get("/me", requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: { id: true, email: true, username: true },
+    select: { id: true, email: true, username: true, defaultRadiusMiles: true },
   });
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
   }
+  res.json({ user });
+});
+
+const updateMeSchema = z.object({
+  defaultRadiusMiles: z.coerce.number().int().min(1).max(100),
+});
+
+router.patch("/me", requireAuth, async (req, res) => {
+  const parsed = updateMeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.userId },
+    data: parsed.data,
+    select: { id: true, email: true, username: true, defaultRadiusMiles: true },
+  });
+
   res.json({ user });
 });
 

@@ -27,7 +27,7 @@ interface ManualLocation {
 }
 
 export default function HomeFeedScreen() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -58,14 +58,14 @@ export default function HomeFeedScreen() {
     setIsLoadingFeed(true);
     setError(null);
     try {
-      const res = await api.feed(token, activeCoords.lat, activeCoords.lng);
+      const res = await api.feed(token, activeCoords.lat, activeCoords.lng, user?.defaultRadiusMiles);
       setFeed(res.feed);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't load the feed");
     } finally {
       setIsLoadingFeed(false);
     }
-  }, [token, activeCoords]);
+  }, [token, activeCoords, user?.defaultRadiusMiles]);
 
   useFocusEffect(
     useCallback(() => {

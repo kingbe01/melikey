@@ -11,6 +11,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, username: string, password: string) => Promise<void>;
   resetPassword: (email: string, code: string, password: string) => Promise<void>;
+  updateDefaultRadiusMiles: (radiusMiles: number) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -59,6 +60,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword: async (email, code, password) => {
         const res = await api.resetPassword(email, code, password);
         await persist(res.token, res.user);
+      },
+      updateDefaultRadiusMiles: async (radiusMiles) => {
+        if (!token) return;
+        const res = await api.updateSettings(token, radiusMiles);
+        setUser(res.user);
       },
       logout: async () => {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
