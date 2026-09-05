@@ -20,6 +20,7 @@ import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
+import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
 const CATEGORY_FILTERS: { value: BusinessCategory | null; label: string }[] = [
   { value: null, label: "All" },
@@ -54,6 +55,7 @@ export default function MyLikeysScreen() {
   const [likeys, setLikeys] = useState<Likey[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTier, setDraftTier] = useState<LikeyTier | null>(null);
@@ -218,14 +220,28 @@ export default function MyLikeysScreen() {
       </View>
     ) : (
       <View style={styles.entryContent}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
-          <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
-            <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+        <TouchableOpacity
+          onPress={() =>
+            setViewingPlace({
+              name: item.business.name,
+              category: item.business.category,
+              address: item.business.address,
+              city: item.business.city,
+              state: item.business.state,
+              latitude: item.business.latitude,
+              longitude: item.business.longitude,
+            })
+          }
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
+            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
+              <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+            </View>
           </View>
-        </View>
-        {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-        {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
+          {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
+          {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
+        </TouchableOpacity>
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]} onPress={() => startEdit(item)}>
             <Text style={styles.actionButtonText}>Edit</Text>
@@ -236,6 +252,10 @@ export default function MyLikeysScreen() {
         </View>
       </View>
     );
+
+  if (viewingPlace) {
+    return <PlaceDetailView place={viewingPlace} onBack={() => setViewingPlace(null)} />;
+  }
 
   return (
     <FlatList

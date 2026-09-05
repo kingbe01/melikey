@@ -7,6 +7,7 @@ import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
+import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
 function formatLocation(business: Business): string | null {
   if (business.city && business.state) return `${business.city}, ${business.state}`;
@@ -20,6 +21,7 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -65,7 +67,20 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
   };
 
   const renderEntry = (item: Likey) => (
-    <View style={styles.entryContent}>
+    <TouchableOpacity
+      style={styles.entryContent}
+      onPress={() =>
+        setViewingPlace({
+          name: item.business.name,
+          category: item.business.category,
+          address: item.business.address,
+          city: item.business.city,
+          state: item.business.state,
+          latitude: item.business.latitude,
+          longitude: item.business.longitude,
+        })
+      }
+    >
       <View style={styles.cardHeader}>
         <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
         <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -74,8 +89,12 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
       </View>
       {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
       {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
-    </View>
+    </TouchableOpacity>
   );
+
+  if (viewingPlace) {
+    return <PlaceDetailView place={viewingPlace} onBack={() => setViewingPlace(null)} />;
+  }
 
   return (
     <View style={styles.container}>

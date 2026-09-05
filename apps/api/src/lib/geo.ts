@@ -50,6 +50,8 @@ export interface FeedItem {
   businessName: string;
   businessCategory: string;
   businessAddress: string | null;
+  businessCity: string | null;
+  businessState: string | null;
   latitude: number;
   longitude: number;
   distanceMiles: number;
@@ -70,13 +72,14 @@ export async function findFeed(
     SELECT
       id, tier, comment, "photoUrl", "createdAt", "authorUsername",
       "businessId", "businessName", "businessCategory", "businessAddress",
-      latitude, longitude, "distanceMiles"
+      "businessCity", "businessState", latitude, longitude, "distanceMiles"
     FROM (
       SELECT
         l.id, l.tier, l.comment, l."photoUrl", l."createdAt",
         u.username AS "authorUsername",
         b.id AS "businessId", b.name AS "businessName", b.category AS "businessCategory",
-        b.address AS "businessAddress", b.latitude, b.longitude,
+        b.address AS "businessAddress", b.city AS "businessCity", b.state AS "businessState",
+        b.latitude, b.longitude,
         (3959 * acos(
           LEAST(1, GREATEST(-1,
             cos(radians(${latitude})) * cos(radians(b.latitude)) * cos(radians(b.longitude) - radians(${longitude}))

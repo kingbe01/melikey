@@ -1,12 +1,22 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type FeedItem } from "../../lib/api";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import { colors } from "../../theme/colors";
+import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
 export default function HomeFeedScreen() {
   const { token } = useAuth();
@@ -15,6 +25,7 @@ export default function HomeFeedScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
 
   const loadFeed = useCallback(async () => {
     if (!token || !coords) return;
@@ -53,6 +64,10 @@ export default function HomeFeedScreen() {
     );
   }
 
+  if (viewingPlace) {
+    return <PlaceDetailView place={viewingPlace} onBack={() => setViewingPlace(null)} />;
+  }
+
   return (
     <FlatList
       style={styles.container}
@@ -70,7 +85,20 @@ export default function HomeFeedScreen() {
         ) : null
       }
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() =>
+            setViewingPlace({
+              name: item.businessName,
+              category: item.businessCategory,
+              address: item.businessAddress,
+              city: item.businessCity,
+              state: item.businessState,
+              latitude: item.latitude,
+              longitude: item.longitude,
+            })
+          }
+        >
           <View style={styles.cardHeader}>
             <Text style={styles.businessName}>{item.businessName}</Text>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -83,7 +111,7 @@ export default function HomeFeedScreen() {
           </Text>
           {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
           {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
-        </View>
+        </TouchableOpacity>
       )}
     />
   );

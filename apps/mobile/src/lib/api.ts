@@ -108,6 +108,8 @@ export interface FeedItem {
   businessName: string;
   businessCategory: BusinessCategory;
   businessAddress: string | null;
+  businessCity: string | null;
+  businessState: string | null;
   latitude: number;
   longitude: number;
   distanceMiles: number;
