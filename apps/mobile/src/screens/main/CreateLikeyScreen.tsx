@@ -17,7 +17,7 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import {
   api,
-  GOOGLE_SUGGESTION_PREFIX,
+  PLACE_SUGGESTION_PREFIX,
   type Business,
   type BusinessCategory,
   type LikeyTier,
@@ -100,7 +100,7 @@ export default function CreateLikeyScreen() {
           longitude: coords.lng,
         });
         businessId = business.id;
-      } else if (selectedBusinessId?.startsWith(GOOGLE_SUGGESTION_PREFIX)) {
+      } else if (selectedBusinessId?.startsWith(PLACE_SUGGESTION_PREFIX)) {
         const selected = nearby.find((b) => b.id === selectedBusinessId);
         if (!selected) return;
         const { business } = await api.createBusiness(token, {
@@ -188,7 +188,7 @@ export default function CreateLikeyScreen() {
                 >
                   <View>
                     <Text>{item.name}</Text>
-                    {item.id.startsWith(GOOGLE_SUGGESTION_PREFIX) ? (
+                    {item.id.startsWith(PLACE_SUGGESTION_PREFIX) ? (
                       <Text style={styles.suggestedTag}>Suggested nearby</Text>
                     ) : null}
                   </View>

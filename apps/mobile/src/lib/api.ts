@@ -64,9 +64,9 @@ export interface Business {
   externalPlaceId?: string;
 }
 
-// A "google:"-prefixed id marks a Places suggestion that isn't a saved
+// A "suggestion:"-prefixed id marks a Places suggestion that isn't a saved
 // Business yet — selecting one must go through createBusiness first.
-export const GOOGLE_SUGGESTION_PREFIX = "google:";
+export const PLACE_SUGGESTION_PREFIX = "suggestion:";
 
 export type LikeyTier = "LIKED" | "FINE" | "DISLIKED";
 export type MyLikeysSort = "recent" | "oldest" | "tier" | "business";

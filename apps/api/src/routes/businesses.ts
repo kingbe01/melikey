@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
+import { searchNearbyPlaces } from "../lib/appleMaps.js";
 import { findNearbyBusinesses } from "../lib/geo.js";
-import { searchNearbyPlaces } from "../lib/places.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -14,13 +14,13 @@ const nearbySchema = z.object({
   radiusMiles: z.coerce.number().positive().max(500).optional().default(10),
 });
 
-// A GOOGLE_PLACES_SUGGESTION_PREFIX-prefixed id marks a Google Places result
-// that isn't saved as a Business yet — POST / (below) creates it on first use.
-const GOOGLE_SUGGESTION_PREFIX = "google:";
+// A SUGGESTION_PREFIX-prefixed id marks an Apple Maps result that isn't
+// saved as a Business yet — POST / (below) creates it on first use.
+const SUGGESTION_PREFIX = "suggestion:";
 const COMMUNITY_RESULTS_FALLBACK_THRESHOLD = 5;
 
 // v1: primary source is businesses the community has already logged nearby.
-// When that's sparse (cold-start areas), we fall back to Google Places so
+// When that's sparse (cold-start areas), we fall back to Apple Maps search so
 // there's still something to pick from; manual entry always covers the rest.
 router.get("/nearby", async (req, res) => {
   const parsed = nearbySchema.safeParse(req.query);
@@ -48,7 +48,7 @@ router.get("/nearby", async (req, res) => {
 
   const suggestions = placeSuggestions
     .filter((p) => !alreadySaved.has(p.externalPlaceId))
-    .map((p) => ({ ...p, id: `${GOOGLE_SUGGESTION_PREFIX}${p.externalPlaceId}` }));
+    .map((p) => ({ ...p, id: `${SUGGESTION_PREFIX}${p.externalPlaceId}` }));
 
   const businesses = [...community, ...suggestions].sort((a, b) => a.distanceMiles - b.distanceMiles);
   res.json({ businesses });
@@ -71,7 +71,7 @@ router.post("/", async (req, res) => {
   }
   const { externalPlaceId, ...data } = parsed.data;
 
-  // Upsert on externalPlaceId so two people logging the same Google-suggested
+  // Upsert on externalPlaceId so two people logging the same Apple-suggested
   // place around the same time land on one Business row, not two.
   const business = externalPlaceId
     ? await prisma.business.upsert({
