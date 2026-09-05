@@ -9,6 +9,22 @@ export class ApiError extends Error {
   }
 }
 
+// Route validation errors come back as either a plain string (our own
+// checks) or a Zod .flatten() object ({formErrors, fieldErrors}) — pull the
+// first human-readable message out of either shape.
+function extractErrorMessage(body: unknown, fallback: string): string {
+  const error = (body as { error?: unknown } | null)?.error;
+  if (typeof error === "string") return error;
+
+  if (error && typeof error === "object") {
+    const flat = error as { formErrors?: string[]; fieldErrors?: Record<string, string[]> };
+    const first = [...(flat.formErrors ?? []), ...Object.values(flat.fieldErrors ?? {}).flat()][0];
+    if (typeof first === "string") return first;
+  }
+
+  return fallback;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit & { token?: string } = {}
@@ -25,8 +41,7 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    const message = typeof body?.error === "string" ? body.error : res.statusText;
-    throw new ApiError(message, res.status);
+    throw new ApiError(extractErrorMessage(body, res.statusText), res.status);
   }
 
   if (res.status === 204) {
