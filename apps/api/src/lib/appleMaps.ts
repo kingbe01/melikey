@@ -135,6 +135,38 @@ async function search(
   return body.results ?? [];
 }
 
+export interface GeocodeResult {
+  label: string;
+  latitude: number;
+  longitude: number;
+}
+
+// Turns a free-text "city, state" or zip into coordinates, for searching a
+// location other than the device's current GPS position.
+export async function geocodeLocation(query: string): Promise<GeocodeResult | null> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) return null;
+
+  const params = new URLSearchParams({ q: query, limit: "1" });
+  const res = await fetch(`https://maps-api.apple.com/v1/geocode?${params}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    console.error("Apple Maps geocode failed", res.status, await res.text().catch(() => ""));
+    return null;
+  }
+
+  const body = (await res.json()) as AppleSearchResponse;
+  const result = body.results?.[0];
+  if (!result?.coordinate) return null;
+
+  return {
+    label: result.formattedAddressLines?.join(", ") ?? result.name ?? query,
+    latitude: result.coordinate.latitude,
+    longitude: result.coordinate.longitude,
+  };
+}
+
 // v1 fallback for cold-start areas with nothing logged yet (see routes/businesses.ts).
 // Only called when community results are sparse, to keep call volume down.
 export async function searchNearbyPlaces(

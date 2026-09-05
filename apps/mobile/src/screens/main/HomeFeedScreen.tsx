@@ -7,6 +7,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -18,6 +19,12 @@ import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
+interface ManualLocation {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export default function HomeFeedScreen() {
   const { token } = useAuth();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
@@ -27,19 +34,26 @@ export default function HomeFeedScreen() {
   const [error, setError] = useState<string | null>(null);
   const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
 
+  const [locationQuery, setLocationQuery] = useState("");
+  const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+
+  const activeCoords = manualLocation ? { lat: manualLocation.lat, lng: manualLocation.lng } : coords;
+
   const loadFeed = useCallback(async () => {
-    if (!token || !coords) return;
+    if (!token || !activeCoords) return;
     setIsLoadingFeed(true);
     setError(null);
     try {
-      const res = await api.feed(token, coords.lat, coords.lng);
+      const res = await api.feed(token, activeCoords.lat, activeCoords.lng);
       setFeed(res.feed);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't load the feed");
     } finally {
       setIsLoadingFeed(false);
     }
-  }, [token, coords]);
+  }, [token, activeCoords]);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,19 +61,31 @@ export default function HomeFeedScreen() {
     }, [loadFeed])
   );
 
+  const onSearchLocation = async () => {
+    if (!token || !locationQuery.trim()) return;
+    setGeocodeError(null);
+    setIsGeocoding(true);
+    try {
+      const res = await api.geocode(token, locationQuery.trim());
+      setManualLocation({ label: res.label, lat: res.latitude, lng: res.longitude });
+    } catch (e) {
+      setGeocodeError(e instanceof Error ? e.message : "Couldn't find that location");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const useMyLocation = () => {
+    setManualLocation(null);
+    setLocationQuery("");
+    setGeocodeError(null);
+  };
+
   if (isLoadingLocation) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator />
         <Text>Finding what's near you...</Text>
-      </View>
-    );
-  }
-
-  if (locationError) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>{locationError}</Text>
       </View>
     );
   }
@@ -74,7 +100,45 @@ export default function HomeFeedScreen() {
       contentContainerStyle={styles.list}
       data={feed}
       keyExtractor={(item) => item.id}
+      keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={isLoadingFeed} onRefresh={loadFeed} />}
+      ListHeaderComponent={
+        <View style={styles.searchSection}>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={[styles.input, styles.searchInput]}
+              placeholder="Search a city, state, or zip"
+              autoCorrect={false}
+              value={locationQuery}
+              onChangeText={setLocationQuery}
+              onSubmitEditing={onSearchLocation}
+            />
+            <TouchableOpacity
+              style={[styles.searchButton, isGeocoding && styles.searchButtonDisabled]}
+              onPress={onSearchLocation}
+              disabled={isGeocoding}
+            >
+              {isGeocoding ? (
+                <ActivityIndicator color={colors.surface} />
+              ) : (
+                <Text style={styles.searchButtonText}>Search</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          {geocodeError ? <Text style={styles.error}>{geocodeError}</Text> : null}
+          {locationError && !manualLocation ? (
+            <Text style={styles.error}>{locationError} Search a location above instead.</Text>
+          ) : null}
+          {manualLocation ? (
+            <View style={styles.manualLocationRow}>
+              <Text style={styles.manualLocationText}>Showing: {manualLocation.label}</Text>
+              <TouchableOpacity onPress={useMyLocation}>
+                <Text style={styles.link}>Use my location</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </View>
+      }
       ListEmptyComponent={
         !isLoadingFeed ? (
           <View style={styles.centered}>
@@ -121,6 +185,37 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colors.background },
   list: { padding: 16, gap: 12, flexGrow: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
+  searchSection: { gap: 8, marginBottom: 4 },
+  searchRow: { flexDirection: "row", gap: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: colors.surface,
+    color: colors.text,
+  },
+  searchInput: { flex: 1 },
+  searchButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchButtonDisabled: { opacity: 0.6 },
+  searchButtonText: { color: colors.surface, fontWeight: "600" },
+  manualLocationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: colors.primaryLight,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  manualLocationText: { color: colors.primaryDark, fontWeight: "600", flexShrink: 1 },
+  link: { color: colors.primary, fontWeight: "600" },
   card: {
     borderWidth: 1,
     borderColor: colors.border,

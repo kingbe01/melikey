@@ -227,6 +227,12 @@ export const api = {
   feed: (token: string, lat: number, lng: number) =>
     request<{ feed: FeedItem[] }>(`/feed?lat=${lat}&lng=${lng}`, { token }),
 
+  geocode: (token: string, q: string) =>
+    request<{ label: string; latitude: number; longitude: number }>(
+      `/feed/geocode?q=${encodeURIComponent(q)}`,
+      { token }
+    ),
+
   following: (token: string) => request<{ following: AuthUser[] }>("/follows/following", { token }),
 
   followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
