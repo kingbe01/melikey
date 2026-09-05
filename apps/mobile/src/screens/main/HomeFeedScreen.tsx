@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type FeedItem } from "../../lib/api";
+import { api, type AuthUser, type FeedItem } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
@@ -39,6 +39,10 @@ export default function HomeFeedScreen() {
   const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
+
+  const [following, setFollowing] = useState<AuthUser[]>([]);
+  const [mutedUsernames, setMutedUsernames] = useState<Set<string>>(new Set());
+  const [isFriendFilterOpen, setIsFriendFilterOpen] = useState(false);
 
   // Memoized so this only produces a new reference when the underlying
   // location actually changes — an inline object literal here would get a
@@ -67,6 +71,30 @@ export default function HomeFeedScreen() {
     useCallback(() => {
       loadFeed();
     }, [loadFeed])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      api
+        .following(token)
+        .then((res) => setFollowing(res.following))
+        .catch(() => setFollowing([]));
+    }, [token])
+  );
+
+  const toggleMuted = (username: string) => {
+    setMutedUsernames((prev) => {
+      const next = new Set(prev);
+      if (next.has(username)) next.delete(username);
+      else next.add(username);
+      return next;
+    });
+  };
+
+  const visibleFeed = useMemo(
+    () => feed.filter((item) => !mutedUsernames.has(item.authorUsername)),
+    [feed, mutedUsernames]
   );
 
   const onSearchLocation = async () => {
@@ -106,7 +134,7 @@ export default function HomeFeedScreen() {
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.list}
-      data={feed}
+      data={visibleFeed}
       keyExtractor={(item) => item.id}
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={isLoadingFeed} onRefresh={loadFeed} />}
@@ -145,13 +173,44 @@ export default function HomeFeedScreen() {
               </TouchableOpacity>
             </View>
           ) : null}
+
+          {following.length > 0 ? (
+            <View style={styles.friendFilterSection}>
+              <TouchableOpacity onPress={() => setIsFriendFilterOpen((v) => !v)}>
+                <Text style={styles.link}>
+                  Filter friends{mutedUsernames.size > 0 ? ` (${mutedUsernames.size} muted)` : ""}
+                </Text>
+              </TouchableOpacity>
+              {isFriendFilterOpen ? (
+                <View style={styles.chipRow}>
+                  {following.map((friend) => {
+                    const isMuted = mutedUsernames.has(friend.username);
+                    return (
+                      <TouchableOpacity
+                        key={friend.id}
+                        style={[styles.chip, !isMuted && styles.chipSelected]}
+                        onPress={() => toggleMuted(friend.username)}
+                      >
+                        <Text style={!isMuted ? styles.chipTextSelected : styles.chipTextMuted}>
+                          @{friend.username}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       }
       ListEmptyComponent={
         !isLoadingFeed ? (
           <View style={styles.centered}>
             <Text style={styles.muted}>
-              {error ?? "No Likeys near you yet from people you follow."}
+              {error ??
+                (feed.length > 0
+                  ? "All nearby Likeys are from muted friends."
+                  : "No Likeys near you yet from people you follow.")}
             </Text>
           </View>
         ) : null
@@ -228,6 +287,19 @@ const styles = StyleSheet.create({
   },
   manualLocationText: { color: colors.primaryDark, fontWeight: "600", flexShrink: 1 },
   link: { color: colors.primary, fontWeight: "600" },
+  friendFilterSection: { gap: 8 },
+  chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+  },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  chipTextSelected: { color: colors.primaryDark, fontWeight: "600" },
+  chipTextMuted: { color: colors.textMuted, textDecorationLine: "line-through" },
   card: {
     borderWidth: 1,
     borderColor: colors.border,
