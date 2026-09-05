@@ -1,5 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -39,7 +39,14 @@ export default function HomeFeedScreen() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
-  const activeCoords = manualLocation ? { lat: manualLocation.lat, lng: manualLocation.lng } : coords;
+  // Memoized so this only produces a new reference when the underlying
+  // location actually changes — an inline object literal here would get a
+  // fresh identity every render, which would change loadFeed's identity
+  // every render too, re-triggering useFocusEffect in an infinite loop.
+  const activeCoords = useMemo(
+    () => (manualLocation ? { lat: manualLocation.lat, lng: manualLocation.lng } : coords),
+    [manualLocation, coords]
+  );
 
   const loadFeed = useCallback(async () => {
     if (!token || !activeCoords) return;
