@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type FeedItem } from "../../lib/api";
+import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
@@ -155,35 +156,39 @@ export default function HomeFeedScreen() {
           </View>
         ) : null
       }
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            setViewingPlace({
-              name: item.businessName,
-              category: item.businessCategory,
-              address: item.businessAddress,
-              city: item.businessCity,
-              state: item.businessState,
-              latitude: item.latitude,
-              longitude: item.longitude,
-            })
-          }
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.businessName}>{item.businessName}</Text>
-            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
-              <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+      renderItem={({ item }) => {
+        const location = formatLocation(item.businessCity, item.businessState);
+        return (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+              setViewingPlace({
+                name: item.businessName,
+                category: item.businessCategory,
+                address: item.businessAddress,
+                city: item.businessCity,
+                state: item.businessState,
+                latitude: item.latitude,
+                longitude: item.longitude,
+              })
+            }
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.businessName}>{item.businessName}</Text>
+              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
+                <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.muted}>
-            {item.businessCategory} · {item.distanceMiles.toFixed(1)} mi · @{item.authorUsername} ·{" "}
-            {formatRelativeTime(item.createdAt)}
-          </Text>
-          {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-          {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
-        </TouchableOpacity>
-      )}
+            <Text style={styles.muted}>
+              {item.businessCategory}
+              {location ? ` · ${location}` : ""} · {item.distanceMiles.toFixed(1)} mi · @{item.authorUsername} ·{" "}
+              {formatRelativeTime(item.createdAt)}
+            </Text>
+            {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
+            {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
+          </TouchableOpacity>
+        );
+      }}
     />
   );
 }

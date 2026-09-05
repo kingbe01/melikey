@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { compressImageToBase64 } from "../../lib/compressImage";
+import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
@@ -298,11 +299,16 @@ export default function MyLikeysScreen() {
         )
       }
       renderItem={({ item: group }) => {
+        const location = formatLocation(group.business.city, group.business.state);
+
         if (group.items.length === 1) {
           return (
             <View style={styles.card}>
               <Text style={styles.businessName}>{group.business.name}</Text>
-              <Text style={styles.muted}>{group.business.category}</Text>
+              <Text style={styles.muted}>
+                {group.business.category}
+                {location ? ` · ${location}` : ""}
+              </Text>
               {renderEntry(group.items[0])}
             </View>
           );
@@ -316,7 +322,8 @@ export default function MyLikeysScreen() {
               <View style={styles.groupHeaderText}>
                 <Text style={styles.businessName}>{group.business.name}</Text>
                 <Text style={styles.muted}>
-                  {group.business.category} · {group.items.length} visits · last{" "}
+                  {group.business.category}
+                  {location ? ` · ${location}` : ""} · {group.items.length} visits · last{" "}
                   {formatRelativeTime(mostRecent.createdAt)}
                 </Text>
               </View>

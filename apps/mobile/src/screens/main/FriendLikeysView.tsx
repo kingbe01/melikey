@@ -11,18 +11,14 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type AuthUser, type Business, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
+import { api, type AuthUser, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
+import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
-
-function formatLocation(business: Business): string | null {
-  if (business.city && business.state) return `${business.city}, ${business.state}`;
-  return business.city || business.state || null;
-}
 
 export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onBack: () => void }) {
   const { token } = useAuth();
@@ -65,14 +61,14 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
   const locationOptions = useMemo(() => {
     const set = new Set<string>();
     for (const likey of likeys) {
-      const location = formatLocation(likey.business);
+      const location = formatLocation(likey.business.city, likey.business.state);
       if (location) set.add(location);
     }
     return Array.from(set).sort();
   }, [likeys]);
 
   const filteredLikeys = useMemo(
-    () => (selectedLocation ? likeys.filter((l) => formatLocation(l.business) === selectedLocation) : likeys),
+    () => (selectedLocation ? likeys.filter((l) => formatLocation(l.business.city, l.business.state) === selectedLocation) : likeys),
     [likeys, selectedLocation]
   );
 
@@ -205,7 +201,7 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
         ) : null
       }
       renderItem={({ item: group }) => {
-        const location = formatLocation(group.business);
+        const location = formatLocation(group.business.city, group.business.state);
 
         if (group.items.length === 1) {
           return (
