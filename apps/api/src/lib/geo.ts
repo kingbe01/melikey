@@ -6,6 +6,8 @@ export interface NearbyBusiness {
   name: string;
   category: string;
   address: string | null;
+  city: string | null;
+  state: string | null;
   latitude: number;
   longitude: number;
   distanceMiles: number;
@@ -22,7 +24,7 @@ export async function findNearbyBusinesses(
   return prisma.$queryRaw<NearbyBusiness[]>`
     SELECT * FROM (
       SELECT
-        id, name, category, address, latitude, longitude,
+        id, name, category, address, city, state, latitude, longitude,
         (3959 * acos(
           LEAST(1, GREATEST(-1,
             cos(radians(${latitude})) * cos(radians(latitude)) * cos(radians(longitude) - radians(${longitude}))

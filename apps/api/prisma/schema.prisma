@@ -66,6 +66,8 @@ model Business {
   name            String
   category        String
   address         String?
+  city            String?
+  state           String?
   latitude        Float
   longitude       Float
   externalPlaceId String?  @unique

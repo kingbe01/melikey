@@ -2,11 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type AuthUser, type Likey } from "../../lib/api";
+import { api, type AuthUser, type Business, type Likey } from "../../lib/api";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
+
+function formatLocation(business: Business): string | null {
+  if (business.city && business.state) return `${business.city}, ${business.state}`;
+  return business.city || business.state || null;
+}
 
 export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onBack: () => void }) {
   const { token } = useAuth();
@@ -14,6 +19,7 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -33,7 +39,21 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
     load();
   }, [load]);
 
-  const groups = useMemo<BusinessGroup[]>(() => groupLikeysByPlace(likeys, "recent"), [likeys]);
+  const locationOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const likey of likeys) {
+      const location = formatLocation(likey.business);
+      if (location) set.add(location);
+    }
+    return Array.from(set).sort();
+  }, [likeys]);
+
+  const filteredLikeys = useMemo(
+    () => (selectedLocation ? likeys.filter((l) => formatLocation(l.business) === selectedLocation) : likeys),
+    [likeys, selectedLocation]
+  );
+
+  const groups = useMemo<BusinessGroup[]>(() => groupLikeysByPlace(filteredLikeys, "recent"), [filteredLikeys]);
 
   const toggleExpanded = (businessId: string) => {
     setExpandedIds((prev) => {
@@ -65,6 +85,26 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
       </TouchableOpacity>
       <Text style={styles.title}>@{user.username}'s Likeys</Text>
 
+      {locationOptions.length > 0 ? (
+        <View style={styles.chipRow}>
+          <TouchableOpacity
+            style={[styles.chip, selectedLocation === null && styles.chipSelected]}
+            onPress={() => setSelectedLocation(null)}
+          >
+            <Text style={selectedLocation === null ? styles.chipTextSelected : undefined}>All</Text>
+          </TouchableOpacity>
+          {locationOptions.map((location) => (
+            <TouchableOpacity
+              key={location}
+              style={[styles.chip, selectedLocation === location && styles.chipSelected]}
+              onPress={() => setSelectedLocation(location)}
+            >
+              <Text style={selectedLocation === location ? styles.chipTextSelected : undefined}>{location}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+
       {isLoading ? <ActivityIndicator style={styles.loadingIndicator} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -76,11 +116,16 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
           !isLoading && !error ? <Text style={styles.empty}>No Likeys posted yet</Text> : null
         }
         renderItem={({ item: group }) => {
+          const location = formatLocation(group.business);
+
           if (group.items.length === 1) {
             return (
               <View style={styles.card}>
                 <Text style={styles.businessName}>{group.business.name}</Text>
-                <Text style={styles.muted}>{group.business.category}</Text>
+                <Text style={styles.muted}>
+                  {group.business.category}
+                  {location ? ` · ${location}` : ""}
+                </Text>
                 {renderEntry(group.items[0])}
               </View>
             );
@@ -94,7 +139,8 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
                 <View style={styles.groupHeaderText}>
                   <Text style={styles.businessName}>{group.business.name}</Text>
                   <Text style={styles.muted}>
-                    {group.business.category} · {group.items.length} visits · last{" "}
+                    {group.business.category}
+                    {location ? ` · ${location}` : ""} · {group.items.length} visits · last{" "}
                     {formatRelativeTime(mostRecent.createdAt)}
                   </Text>
                 </View>
@@ -129,6 +175,17 @@ const styles = StyleSheet.create({
   backText: { color: colors.primary, fontWeight: "600" },
   title: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 8 },
   loadingIndicator: { marginBottom: 8 },
+  chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 12 },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+  },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  chipTextSelected: { color: colors.primaryDark, fontWeight: "600" },
   list: { paddingBottom: 32 },
   card: {
     borderWidth: 1,

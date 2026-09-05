@@ -73,6 +73,8 @@ export interface Business {
   name: string;
   category: BusinessCategory;
   address: string | null;
+  city: string | null;
+  state: string | null;
   latitude: number;
   longitude: number;
   distanceMiles?: number;
@@ -179,6 +181,9 @@ export const api = {
     data: {
       name: string;
       category: BusinessCategory;
+      address?: string;
+      city?: string;
+      state?: string;
       latitude: number;
       longitude: number;
       externalPlaceId?: string;

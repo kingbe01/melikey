@@ -58,6 +58,8 @@ const createSchema = z.object({
   name: z.string().min(1).max(120),
   category: z.enum(["restaurant", "entertainment"]),
   address: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   externalPlaceId: z.string().optional(),

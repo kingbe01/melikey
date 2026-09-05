@@ -22,6 +22,8 @@ export interface PlaceSuggestion {
   name: string;
   category: "restaurant" | "entertainment";
   address: string | null;
+  city: string | null;
+  state: string | null;
   latitude: number;
   longitude: number;
   externalPlaceId: string;
@@ -33,6 +35,7 @@ interface AppleSearchResult {
   name?: string;
   coordinate?: { latitude: number; longitude: number };
   formattedAddressLines?: string[];
+  structuredAddress?: { locality?: string; administrativeAreaCode?: string; administrativeArea?: string };
   poiCategory?: string;
 }
 
@@ -161,6 +164,8 @@ export async function searchNearbyPlaces(
       name: place.name,
       category: categorize(place.poiCategory),
       address: place.formattedAddressLines?.join(", ") ?? null,
+      city: place.structuredAddress?.locality ?? null,
+      state: place.structuredAddress?.administrativeAreaCode ?? place.structuredAddress?.administrativeArea ?? null,
       latitude: place.coordinate.latitude,
       longitude: place.coordinate.longitude,
       externalPlaceId: place.id,

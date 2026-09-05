@@ -51,6 +51,8 @@ export default function CreateLikeyScreen() {
   const [isLocationExpanded, setIsLocationExpanded] = useState(true);
   const [manualName, setManualName] = useState("");
   const [manualCategory, setManualCategory] = useState<BusinessCategory | null>(null);
+  const [manualCity, setManualCity] = useState("");
+  const [manualState, setManualState] = useState("");
 
   const [tier, setTier] = useState<LikeyTier | null>(null);
   const [comment, setComment] = useState("");
@@ -95,6 +97,8 @@ export default function CreateLikeyScreen() {
         const { business } = await api.createBusiness(token, {
           name: manualName.trim(),
           category: manualCategory as BusinessCategory,
+          city: manualCity.trim() || undefined,
+          state: manualState.trim() || undefined,
           latitude: coords.lat,
           longitude: coords.lng,
         });
@@ -105,6 +109,9 @@ export default function CreateLikeyScreen() {
         const { business } = await api.createBusiness(token, {
           name: selected.name,
           category: selected.category,
+          address: selected.address ?? undefined,
+          city: selected.city ?? undefined,
+          state: selected.state ?? undefined,
           latitude: selected.latitude,
           longitude: selected.longitude,
           externalPlaceId: selected.externalPlaceId,
@@ -126,6 +133,8 @@ export default function CreateLikeyScreen() {
       setIsLocationExpanded(true);
       setManualName("");
       setManualCategory(null);
+      setManualCity("");
+      setManualState("");
       setTier(null);
       setComment("");
       setPhotoBase64(null);
@@ -221,6 +230,22 @@ export default function CreateLikeyScreen() {
                 <Text>{c.label}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+          <View style={styles.optionRow}>
+            <TextInput
+              style={[styles.input, styles.cityInput]}
+              placeholder="City (optional)"
+              value={manualCity}
+              onChangeText={setManualCity}
+            />
+            <TextInput
+              style={[styles.input, styles.stateInput]}
+              placeholder="State"
+              autoCapitalize="characters"
+              maxLength={2}
+              value={manualState}
+              onChangeText={setManualState}
+            />
           </View>
           {manualName.trim() !== "" && manualCategory !== null ? (
             <TouchableOpacity onPress={() => setIsLocationExpanded(false)}>
@@ -320,6 +345,8 @@ const styles = StyleSheet.create({
   },
   commentInput: { minHeight: 80, textAlignVertical: "top" },
   optionRow: { flexDirection: "row", gap: 8 },
+  cityInput: { flex: 2 },
+  stateInput: { flex: 1 },
   option: {
     borderWidth: 1,
     borderColor: colors.border,
