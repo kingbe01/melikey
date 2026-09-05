@@ -245,11 +245,19 @@ export default function MyLikeysScreen() {
           </TouchableOpacity>
         )}
         <View style={styles.actionRow}>
-          <TouchableOpacity onPress={cancelEdit} disabled={isSavingEdit}>
-            <Text style={styles.link}>Cancel</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionButtonNeutral, isSavingEdit && styles.actionButtonDisabled]}
+            onPress={cancelEdit}
+            disabled={isSavingEdit}
+          >
+            <Text style={styles.actionButtonTextNeutral}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={saveEdit} disabled={isSavingEdit}>
-            <Text style={styles.link}>{isSavingEdit ? "Saving..." : "Save"}</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionButtonPrimary, isSavingEdit && styles.actionButtonDisabled]}
+            onPress={saveEdit}
+            disabled={isSavingEdit}
+          >
+            <Text style={styles.actionButtonText}>{isSavingEdit ? "Saving..." : "Save"}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -264,11 +272,11 @@ export default function MyLikeysScreen() {
         {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
         {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
         <View style={styles.actionRow}>
-          <TouchableOpacity onPress={() => startEdit(item)}>
-            <Text style={styles.link}>Edit</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]} onPress={() => startEdit(item)}>
+            <Text style={styles.actionButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onDelete(item)}>
-            <Text style={styles.linkDanger}>Delete</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.actionButtonDanger]} onPress={() => onDelete(item)}>
+            <Text style={styles.actionButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -430,7 +438,20 @@ const styles = StyleSheet.create({
   comment: { fontSize: 14, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
   photoPreview: { width: 120, height: 120, borderRadius: 10, marginBottom: 4 },
-  actionRow: { flexDirection: "row", gap: 16, marginTop: 4 },
+  actionRow: { flexDirection: "row", gap: 10, marginTop: 6 },
+  actionButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionButtonPrimary: { backgroundColor: colors.primary },
+  actionButtonDanger: { backgroundColor: colors.danger },
+  actionButtonNeutral: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  actionButtonDisabled: { opacity: 0.6 },
+  actionButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
+  actionButtonTextNeutral: { color: colors.text, fontWeight: "600", fontSize: 15 },
   link: { color: colors.primary, fontWeight: "600" },
   linkDanger: { color: colors.danger, fontWeight: "600" },
   muted: { color: colors.textMuted, fontSize: 13 },
