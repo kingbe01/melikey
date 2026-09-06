@@ -1,14 +1,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { api } from "../../lib/api";
 import { colors } from "../../theme/colors";
@@ -52,16 +45,20 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
           onChangeText={setEmail}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+        <Button
+          label={isSubmitting ? "Sending..." : "Send reset code"}
           onPress={onSubmit}
           disabled={!canSubmit}
-        >
-          <Text style={styles.buttonText}>{isSubmitting ? "Sending..." : "Send reset code"}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.link}>Back to log in</Text>
-        </TouchableOpacity>
+          loading={isSubmitting}
+          style={styles.submitButton}
+        />
+        <Button
+          label="Back to log in"
+          variant="secondary"
+          small
+          style={styles.linkButton}
+          onPress={() => navigation.navigate("Login")}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -82,8 +79,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   error: { color: colors.danger },
-  button: { backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  buttonDisabled: { backgroundColor: colors.primaryLight },
-  buttonText: { color: colors.surface, fontWeight: "600" },
-  link: { color: colors.primary, marginTop: 12, textAlign: "center" },
+  submitButton: { marginTop: 4 },
+  linkButton: { alignSelf: "center", marginTop: 8 },
 });

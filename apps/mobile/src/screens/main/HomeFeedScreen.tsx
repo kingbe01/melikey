@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { api, type AuthUser, type FeedItem } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
@@ -149,17 +150,7 @@ export default function HomeFeedScreen() {
               onChangeText={setLocationQuery}
               onSubmitEditing={onSearchLocation}
             />
-            <TouchableOpacity
-              style={[styles.searchButton, isGeocoding && styles.searchButtonDisabled]}
-              onPress={onSearchLocation}
-              disabled={isGeocoding}
-            >
-              {isGeocoding ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={styles.searchButtonText}>Search</Text>
-              )}
-            </TouchableOpacity>
+            <Button label="Search" loading={isGeocoding} onPress={onSearchLocation} />
           </View>
           {geocodeError ? <Text style={styles.error}>{geocodeError}</Text> : null}
           {locationError && !manualLocation ? (
@@ -168,19 +159,19 @@ export default function HomeFeedScreen() {
           {manualLocation ? (
             <View style={styles.manualLocationRow}>
               <Text style={styles.manualLocationText}>Showing: {manualLocation.label}</Text>
-              <TouchableOpacity onPress={useMyLocation}>
-                <Text style={styles.link}>Use my location</Text>
-              </TouchableOpacity>
+              <Button label="Use my location" variant="secondary" small onPress={useMyLocation} />
             </View>
           ) : null}
 
           {following.length > 0 ? (
             <View style={styles.friendFilterSection}>
-              <TouchableOpacity onPress={() => setIsFriendFilterOpen((v) => !v)}>
-                <Text style={styles.link}>
-                  Filter friends{mutedUsernames.size > 0 ? ` (${mutedUsernames.size} muted)` : ""}
-                </Text>
-              </TouchableOpacity>
+              <Button
+                label={`Filter friends${mutedUsernames.size > 0 ? ` (${mutedUsernames.size} muted)` : ""}`}
+                variant="secondary"
+                small
+                style={styles.linkButton}
+                onPress={() => setIsFriendFilterOpen((v) => !v)}
+              />
               {isFriendFilterOpen ? (
                 <View style={styles.chipRow}>
                   {following.map((friend) => {
@@ -267,15 +258,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   searchInput: { flex: 1 },
-  searchButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchButtonDisabled: { opacity: 0.6 },
-  searchButtonText: { color: colors.surface, fontWeight: "600" },
   manualLocationRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -286,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   manualLocationText: { color: colors.primaryDark, fontWeight: "600", flexShrink: 1 },
-  link: { color: colors.primary, fontWeight: "600" },
+  linkButton: { alignSelf: "flex-start" },
   friendFilterSection: { gap: 8 },
   chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   chip: {

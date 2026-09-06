@@ -1,15 +1,8 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
 
@@ -61,13 +54,13 @@ export default function ResetPasswordScreen({ route }: Props) {
           onChangeText={setPassword}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+        <Button
+          label={isSubmitting ? "Resetting..." : "Reset password"}
           onPress={onSubmit}
           disabled={!canSubmit}
-        >
-          <Text style={styles.buttonText}>{isSubmitting ? "Resetting..." : "Reset password"}</Text>
-        </TouchableOpacity>
+          loading={isSubmitting}
+          style={styles.submitButton}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -88,7 +81,5 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   error: { color: colors.danger },
-  button: { backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  buttonDisabled: { backgroundColor: colors.primaryLight },
-  buttonText: { color: colors.surface, fontWeight: "600" },
+  submitButton: { marginTop: 4 },
 });

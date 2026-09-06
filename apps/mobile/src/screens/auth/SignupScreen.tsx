@@ -1,17 +1,8 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
 
@@ -75,16 +66,20 @@ export default function SignupScreen({ navigation }: Props) {
           onChangeText={setPassword}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+        <Button
+          label={isSubmitting ? "Creating account..." : "Sign up"}
           onPress={onSubmit}
           disabled={!canSubmit}
-        >
-          <Text style={styles.buttonText}>{isSubmitting ? "Creating account..." : "Sign up"}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.link}>Already have an account? Log in</Text>
-        </TouchableOpacity>
+          loading={isSubmitting}
+          style={styles.submitButton}
+        />
+        <Button
+          label="Already have an account? Log in"
+          variant="secondary"
+          small
+          style={styles.linkButton}
+          onPress={() => navigation.navigate("Login")}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -105,8 +100,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   error: { color: colors.danger },
-  button: { backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center" },
-  buttonDisabled: { backgroundColor: colors.primaryLight },
-  buttonText: { color: colors.surface, fontWeight: "600" },
-  link: { color: colors.primary, marginTop: 12, textAlign: "center" },
+  submitButton: { marginTop: 4 },
+  linkButton: { alignSelf: "center", marginTop: 8 },
 });

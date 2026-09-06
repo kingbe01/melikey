@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
@@ -169,30 +170,25 @@ export default function MyLikeysScreen() {
         {draftPhotoUrl ? (
           <View>
             <Image source={{ uri: draftPhotoUrl }} style={styles.photoPreview} />
-            <TouchableOpacity onPress={removeEditPhoto}>
-              <Text style={styles.linkDanger}>Remove photo</Text>
-            </TouchableOpacity>
+            <Button label="Remove photo" variant="dangerOutline" small style={styles.linkButton} onPress={removeEditPhoto} />
           </View>
         ) : (
-          <TouchableOpacity onPress={pickEditPhoto}>
-            <Text style={styles.link}>Add a photo</Text>
-          </TouchableOpacity>
+          <Button label="Add a photo" variant="secondary" small style={styles.linkButton} onPress={pickEditPhoto} />
         )}
         <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonNeutral, isSavingEdit && styles.actionButtonDisabled]}
+          <Button
+            label="Cancel"
+            variant="secondary"
+            disabled={isSavingEdit}
             onPress={cancelEdit}
-            disabled={isSavingEdit}
-          >
-            <Text style={styles.actionButtonTextNeutral}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonPrimary, isSavingEdit && styles.actionButtonDisabled]}
+            style={styles.actionButton}
+          />
+          <Button
+            label={isSavingEdit ? "Saving..." : "Save"}
+            loading={isSavingEdit}
             onPress={saveEdit}
-            disabled={isSavingEdit}
-          >
-            <Text style={styles.actionButtonText}>{isSavingEdit ? "Saving..." : "Save"}</Text>
-          </TouchableOpacity>
+            style={styles.actionButton}
+          />
         </View>
       </View>
     ) : (
@@ -220,12 +216,8 @@ export default function MyLikeysScreen() {
           {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
         </TouchableOpacity>
         <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]} onPress={() => startEdit(item)}>
-            <Text style={styles.actionButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonDanger]} onPress={() => onDelete(item)}>
-            <Text style={styles.actionButtonText}>Delete</Text>
-          </TouchableOpacity>
+          <Button label="Edit" onPress={() => startEdit(item)} style={styles.actionButton} />
+          <Button label="Delete" variant="danger" onPress={() => onDelete(item)} style={styles.actionButton} />
         </View>
       </View>
     );
@@ -397,20 +389,7 @@ const styles = StyleSheet.create({
   photo: { width: "100%", height: 180, borderRadius: 8 },
   photoPreview: { width: 120, height: 120, borderRadius: 10, marginBottom: 4 },
   actionRow: { flexDirection: "row", gap: 10, marginTop: 6 },
-  actionButton: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonPrimary: { backgroundColor: colors.primary },
-  actionButtonDanger: { backgroundColor: colors.danger },
-  actionButtonNeutral: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  actionButtonDisabled: { opacity: 0.6 },
-  actionButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
-  actionButtonTextNeutral: { color: colors.text, fontWeight: "600", fontSize: 15 },
-  link: { color: colors.primary, fontWeight: "600" },
-  linkDanger: { color: colors.danger, fontWeight: "600" },
+  actionButton: { flex: 1 },
+  linkButton: { alignSelf: "flex-start" },
   muted: { color: colors.textMuted, fontSize: 13 },
 });

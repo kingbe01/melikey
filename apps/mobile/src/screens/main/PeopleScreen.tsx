@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
 import { colors } from "../../theme/colors";
 import FriendLikeysView from "./FriendLikeysView";
@@ -123,17 +124,7 @@ export default function PeopleScreen() {
           onChangeText={setQuery}
           onSubmitEditing={onSearch}
         />
-        <TouchableOpacity
-          style={[styles.actionButton, styles.actionButtonPrimary, isSearching && styles.actionButtonDisabled]}
-          onPress={onSearch}
-          disabled={isSearching}
-        >
-          {isSearching ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <Text style={styles.actionButtonText}>Search</Text>
-          )}
-        </TouchableOpacity>
+        <Button label="Search" loading={isSearching} onPress={onSearch} />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -145,21 +136,12 @@ export default function PeopleScreen() {
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.rowText}>{item.username}</Text>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionButtonPrimary,
-                pendingId === item.id && styles.actionButtonDisabled,
-              ]}
+            <Button
+              label="Follow"
+              small
+              loading={pendingId === item.id}
               onPress={() => onSendRequest(item.id)}
-              disabled={pendingId === item.id}
-            >
-              {pendingId === item.id ? (
-                <ActivityIndicator color={colors.surface} size="small" />
-              ) : (
-                <Text style={styles.actionButtonText}>Follow</Text>
-              )}
-            </TouchableOpacity>
+            />
           </View>
         )}
       />
@@ -175,36 +157,14 @@ export default function PeopleScreen() {
           <View style={styles.row}>
             <Text style={styles.rowText}>{item.follower.username}</Text>
             <View style={styles.actions}>
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  styles.actionButtonPrimary,
-                  pendingId === item.id && styles.actionButtonDisabled,
-                ]}
-                onPress={() => onApprove(item.id)}
-                disabled={pendingId === item.id}
-              >
-                {pendingId === item.id ? (
-                  <ActivityIndicator color={colors.surface} size="small" />
-                ) : (
-                  <Text style={styles.actionButtonText}>Approve</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  styles.actionButtonDanger,
-                  pendingId === item.id && styles.actionButtonDisabled,
-                ]}
+              <Button label="Approve" small loading={pendingId === item.id} onPress={() => onApprove(item.id)} />
+              <Button
+                label="Deny"
+                variant="danger"
+                small
+                loading={pendingId === item.id}
                 onPress={() => onDeny(item.id)}
-                disabled={pendingId === item.id}
-              >
-                {pendingId === item.id ? (
-                  <ActivityIndicator color={colors.surface} size="small" />
-                ) : (
-                  <Text style={styles.actionButtonText}>Deny</Text>
-                )}
-              </TouchableOpacity>
+              />
             </View>
           </View>
         )}
@@ -272,18 +232,6 @@ const styles = StyleSheet.create({
   },
   rowText: { fontSize: 15, color: colors.text, flexShrink: 1 },
   actions: { flexDirection: "row", gap: 10 },
-  actionButton: {
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    minWidth: 88,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonPrimary: { backgroundColor: colors.primary },
-  actionButtonDanger: { backgroundColor: colors.danger },
-  actionButtonDisabled: { opacity: 0.6 },
-  actionButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
   error: { color: colors.danger, marginTop: 8 },
   empty: { color: colors.textMuted, paddingVertical: 8 },
 });

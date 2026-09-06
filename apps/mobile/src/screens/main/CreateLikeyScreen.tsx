@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import {
   api,
   PLACE_SUGGESTION_PREFIX,
@@ -166,12 +167,12 @@ export default function CreateLikeyScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Where are you?</Text>
       {!isLocationExpanded ? (
-        <TouchableOpacity style={styles.row} onPress={() => setIsLocationExpanded(true)}>
+        <View style={styles.row}>
           <Text style={styles.confirmedPlaceName}>
             {mode === "select" ? nearby.find((b) => b.id === selectedBusinessId)?.name : manualName}
           </Text>
-          <Text style={styles.link}>Change</Text>
-        </TouchableOpacity>
+          <Button label="Change" variant="secondary" small onPress={() => setIsLocationExpanded(true)} />
+        </View>
       ) : mode === "select" ? (
         <>
           {isLoadingNearby ? (
@@ -204,9 +205,13 @@ export default function CreateLikeyScreen() {
               ListEmptyComponent={<Text style={styles.muted}>No logged places near you yet</Text>}
             />
           )}
-          <TouchableOpacity onPress={() => setMode("manual")}>
-            <Text style={styles.link}>Can't find it? Add a new place</Text>
-          </TouchableOpacity>
+          <Button
+            label="Can't find it? Add a new place"
+            variant="secondary"
+            small
+            style={styles.linkButton}
+            onPress={() => setMode("manual")}
+          />
         </>
       ) : (
         <>
@@ -244,13 +249,20 @@ export default function CreateLikeyScreen() {
             />
           </View>
           {manualName.trim() !== "" && manualCategory !== null ? (
-            <TouchableOpacity onPress={() => setIsLocationExpanded(false)}>
-              <Text style={styles.link}>Use this place</Text>
-            </TouchableOpacity>
+            <Button
+              label="Use this place"
+              small
+              style={styles.linkButton}
+              onPress={() => setIsLocationExpanded(false)}
+            />
           ) : null}
-          <TouchableOpacity onPress={() => setMode("select")}>
-            <Text style={styles.link}>Pick from nearby places instead</Text>
-          </TouchableOpacity>
+          <Button
+            label="Pick from nearby places instead"
+            variant="secondary"
+            small
+            style={styles.linkButton}
+            onPress={() => setMode("select")}
+          />
         </>
       )}
 
@@ -287,26 +299,28 @@ export default function CreateLikeyScreen() {
             source={{ uri: `data:image/jpeg;base64,${photoBase64}` }}
             style={styles.photoPreview}
           />
-          <TouchableOpacity onPress={() => setPhotoBase64(null)}>
-            <Text style={styles.linkDanger}>Remove photo</Text>
-          </TouchableOpacity>
+          <Button
+            label="Remove photo"
+            variant="dangerOutline"
+            small
+            style={styles.linkButton}
+            onPress={() => setPhotoBase64(null)}
+          />
         </View>
       ) : (
-        <TouchableOpacity style={styles.photoButton} onPress={pickPhoto}>
-          <Text style={styles.link}>Choose photo</Text>
-        </TouchableOpacity>
+        <Button label="Choose photo" variant="secondary" small style={styles.linkButton} onPress={pickPhoto} />
       )}
 
       {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
       {submitSuccess ? <Text style={styles.success}>Likey posted!</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+      <Button
+        label={isSubmitting ? "Posting..." : "Post Likey"}
         onPress={onSubmit}
         disabled={!canSubmit}
-      >
-        <Text style={styles.submitButtonText}>{isSubmitting ? "Posting..." : "Post Likey"}</Text>
-      </TouchableOpacity>
+        loading={isSubmitting}
+        style={styles.submitButton}
+      />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -321,6 +335,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
@@ -352,19 +367,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   optionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  photoButton: { alignSelf: "flex-start" },
   photoPreview: { width: 120, height: 120, borderRadius: 10, marginBottom: 4 },
-  submitButton: {
-    marginTop: 24,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  submitButtonDisabled: { backgroundColor: colors.primaryLight },
-  submitButtonText: { color: colors.surface, fontWeight: "600" },
-  link: { color: colors.primary, marginVertical: 8 },
-  linkDanger: { color: colors.danger },
+  submitButton: { marginTop: 24 },
+  linkButton: { alignSelf: "flex-start", marginVertical: 8 },
   muted: { color: colors.textMuted },
   error: { color: colors.danger },
   success: { color: colors.success },

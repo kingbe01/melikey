@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { colors } from "../../theme/colors";
 import SettingsScreen from "./SettingsScreen";
@@ -63,23 +64,29 @@ export default function ProfileScreen() {
           </View>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={onChangePhoto} disabled={isUpdatingPhoto}>
-        <Text style={styles.link}>{user?.profilePhotoUrl ? "Change photo" : "Add photo"}</Text>
-      </TouchableOpacity>
-      {user?.profilePhotoUrl ? (
-        <TouchableOpacity onPress={onRemovePhoto} disabled={isUpdatingPhoto}>
-          <Text style={styles.linkDanger}>Remove photo</Text>
-        </TouchableOpacity>
-      ) : null}
+      <View style={styles.photoActionRow}>
+        <Button
+          label={user?.profilePhotoUrl ? "Change photo" : "Add photo"}
+          variant="secondary"
+          small
+          disabled={isUpdatingPhoto}
+          onPress={onChangePhoto}
+        />
+        {user?.profilePhotoUrl ? (
+          <Button
+            label="Remove photo"
+            variant="dangerOutline"
+            small
+            disabled={isUpdatingPhoto}
+            onPress={onRemovePhoto}
+          />
+        ) : null}
+      </View>
 
       <Text style={styles.title}>{user?.username}</Text>
       <Text style={styles.email}>{user?.email}</Text>
-      <TouchableOpacity style={styles.button} onPress={() => setShowSettings(true)}>
-        <Text style={styles.buttonText}>Settings</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => logout()}>
-        <Text style={styles.buttonText}>Log out</Text>
-      </TouchableOpacity>
+      <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setShowSettings(true)} />
+      <Button label="Log out" variant="dangerOutline" style={styles.actionButton} onPress={() => logout()} />
     </View>
   );
 }
@@ -102,16 +109,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  photoActionRow: { flexDirection: "row", gap: 8 },
   title: { fontSize: 20, fontWeight: "600", color: colors.text, marginTop: 12 },
   email: { color: colors.textMuted },
-  button: {
-    marginTop: 12,
-    backgroundColor: colors.primaryLight,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  buttonText: { color: colors.primaryDark, fontWeight: "600" },
-  link: { color: colors.primary, fontWeight: "600" },
-  linkDanger: { color: colors.danger, fontWeight: "600" },
+  actionButton: { marginTop: 12, minWidth: 160 },
 });
