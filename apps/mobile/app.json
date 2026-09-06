@@ -39,7 +39,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Melikey needs access to your photos so you can attach one to a Likey."
+          "photosPermission": "Melikey needs access to your photos so you can attach one to a Likey.",
+          "cameraPermission": "Melikey needs access to your camera so you can take a photo for a Likey."
         }
       ]
     ]

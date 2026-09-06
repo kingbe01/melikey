@@ -1,4 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,7 +21,7 @@ import {
   type BusinessCategory,
   type LikeyTier,
 } from "../../lib/api";
-import { compressImageToBase64 } from "../../lib/compressImage";
+import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import { colors } from "../../theme/colors";
 
@@ -73,12 +72,8 @@ export default function CreateLikeyScreen() {
   }, [token, coords, user?.defaultRadiusMiles]);
 
   const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
-    const asset = result.canceled ? null : result.assets[0];
-    if (asset) {
-      const base64 = await compressImageToBase64(asset.uri, asset.width, asset.height);
-      if (base64) setPhotoBase64(base64);
-    }
+    const base64 = await pickOrCapturePhoto();
+    if (base64) setPhotoBase64(base64);
   };
 
   const canSubmit =

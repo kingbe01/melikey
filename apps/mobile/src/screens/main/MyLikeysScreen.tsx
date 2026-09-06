@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,11 +14,11 @@ import {
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
-import { compressImageToBase64 } from "../../lib/compressImage";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
+import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
@@ -96,14 +95,10 @@ export default function MyLikeysScreen() {
   const cancelEdit = () => setEditingId(null);
 
   const pickEditPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
-    const asset = result.canceled ? null : result.assets[0];
-    if (asset) {
-      const base64 = await compressImageToBase64(asset.uri, asset.width, asset.height);
-      if (base64) {
-        setDraftPhotoBase64(base64);
-        setDraftPhotoUrl(`data:image/jpeg;base64,${base64}`);
-      }
+    const base64 = await pickOrCapturePhoto();
+    if (base64) {
+      setDraftPhotoBase64(base64);
+      setDraftPhotoUrl(`data:image/jpeg;base64,${base64}`);
     }
   };
 
