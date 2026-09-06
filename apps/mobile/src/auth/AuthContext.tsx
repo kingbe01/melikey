@@ -12,6 +12,7 @@ interface AuthContextValue {
   signup: (email: string, username: string, password: string) => Promise<void>;
   resetPassword: (email: string, code: string, password: string) => Promise<void>;
   updateDefaultRadiusMiles: (radiusMiles: number) => Promise<void>;
+  updateProfilePhoto: (photoBase64: string | null) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -63,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       updateDefaultRadiusMiles: async (radiusMiles) => {
         if (!token) return;
-        const res = await api.updateSettings(token, radiusMiles);
+        const res = await api.updateSettings(token, { defaultRadiusMiles: radiusMiles });
+        setUser(res.user);
+      },
+      updateProfilePhoto: async (photoBase64) => {
+        if (!token) return;
+        const res = await api.updateSettings(token, { profilePhotoBase64: photoBase64 });
         setUser(res.user);
       },
       logout: async () => {

@@ -56,6 +56,7 @@ export interface AuthUser {
   email: string;
   username: string;
   defaultRadiusMiles: number;
+  profilePhotoUrl: string | null;
 }
 
 export interface AuthResponse {
@@ -156,11 +157,14 @@ export const api = {
 
   me: (token: string) => request<{ user: AuthUser }>("/auth/me", { token }),
 
-  updateSettings: (token: string, defaultRadiusMiles: number) =>
+  updateSettings: (
+    token: string,
+    data: { defaultRadiusMiles?: number; profilePhotoBase64?: string | null }
+  ) =>
     request<{ user: AuthUser }>("/auth/me", {
       method: "PATCH",
       token,
-      body: JSON.stringify({ defaultRadiusMiles }),
+      body: JSON.stringify(data),
     }),
 
   forgotPassword: (email: string) =>

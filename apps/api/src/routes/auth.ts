@@ -53,7 +53,7 @@ router.post("/signup", async (req, res) => {
   const token = signToken(user.id);
   res.status(201).json({
     token,
-    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles, profilePhotoUrl: user.profilePhotoUrl },
   });
 });
 
@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
   const token = signToken(user.id);
   res.json({
     token,
-    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles, profilePhotoUrl: user.profilePhotoUrl },
   });
 });
 
@@ -157,14 +157,14 @@ router.post("/reset-password", async (req, res) => {
   const token = signToken(user.id);
   res.json({
     token,
-    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles },
+    user: { id: user.id, email: user.email, username: user.username, defaultRadiusMiles: user.defaultRadiusMiles, profilePhotoUrl: user.profilePhotoUrl },
   });
 });
 
 router.get("/me", requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: { id: true, email: true, username: true, defaultRadiusMiles: true },
+    select: { id: true, email: true, username: true, defaultRadiusMiles: true, profilePhotoUrl: true },
   });
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -174,7 +174,9 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 const updateMeSchema = z.object({
-  defaultRadiusMiles: z.coerce.number().int().min(1).max(100),
+  defaultRadiusMiles: z.coerce.number().int().min(1).max(100).optional(),
+  // ~2M base64 chars =~ 1.5MB decoded image; matches the Likey photo cap.
+  profilePhotoBase64: z.string().max(2_000_000).nullable().optional(),
 });
 
 router.patch("/me", requireAuth, async (req, res) => {
@@ -183,11 +185,17 @@ router.patch("/me", requireAuth, async (req, res) => {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
+  const { defaultRadiusMiles, profilePhotoBase64 } = parsed.data;
 
   const user = await prisma.user.update({
     where: { id: req.userId },
-    data: parsed.data,
-    select: { id: true, email: true, username: true, defaultRadiusMiles: true },
+    data: {
+      ...(defaultRadiusMiles !== undefined ? { defaultRadiusMiles } : {}),
+      ...(profilePhotoBase64 !== undefined
+        ? { profilePhotoUrl: profilePhotoBase64 ? `data:image/jpeg;base64,${profilePhotoBase64}` : null }
+        : {}),
+    },
+    select: { id: true, email: true, username: true, defaultRadiusMiles: true, profilePhotoUrl: true },
   });
 
   res.json({ user });

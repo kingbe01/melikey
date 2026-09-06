@@ -19,12 +19,13 @@ enum LikeyTier {
 }
 
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  username          String   @unique
-  passwordHash      String
-  defaultRadiusMiles Int     @default(10)
-  createdAt         DateTime @default(now())
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  username           String   @unique
+  passwordHash       String
+  defaultRadiusMiles Int      @default(10)
+  profilePhotoUrl    String?
+  createdAt          DateTime @default(now())
 
   likeys              Likey[]
   followsSent         Follow[]            @relation("FollowsSent")
