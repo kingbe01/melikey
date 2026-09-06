@@ -24,7 +24,7 @@ router.get("/search", async (req, res) => {
         { email: { contains: q, mode: "insensitive" } },
       ],
     },
-    select: { id: true, username: true, email: true },
+    select: { id: true, username: true, email: true, profilePhotoUrl: true },
     take: 20,
   });
 

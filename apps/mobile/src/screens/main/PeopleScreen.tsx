@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
 import { colors } from "../../theme/colors";
@@ -193,7 +194,10 @@ export default function PeopleScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.row} onPress={() => setViewingFriend(item)}>
-            <Text style={styles.rowText}>{item.username}</Text>
+            <View style={styles.friendRowLeft}>
+              <Avatar uri={item.profilePhotoUrl} size={36} />
+              <Text style={styles.rowText}>{item.username}</Text>
+            </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
@@ -231,6 +235,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   rowText: { fontSize: 15, color: colors.text, flexShrink: 1 },
+  friendRowLeft: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
   actions: { flexDirection: "row", gap: 10 },
   error: { color: colors.danger, marginTop: 8 },
   empty: { color: colors.textMuted, paddingVertical: 8 },

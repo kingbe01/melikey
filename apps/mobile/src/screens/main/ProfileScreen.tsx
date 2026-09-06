@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { colors } from "../../theme/colors";
@@ -53,15 +53,11 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <TouchableOpacity style={styles.avatarWrapper} onPress={onChangePhoto} disabled={isUpdatingPhoto}>
         {isUpdatingPhoto ? (
-          <View style={styles.avatarPlaceholder}>
+          <View style={[styles.avatarLoading, { width: 96, height: 96, borderRadius: 48 }]}>
             <ActivityIndicator color={colors.primaryDark} />
           </View>
-        ) : user?.profilePhotoUrl ? (
-          <Image source={{ uri: user.profilePhotoUrl }} style={styles.avatar} />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={40} color={colors.primaryDark} />
-          </View>
+          <Avatar uri={user?.profilePhotoUrl ?? null} size={96} />
         )}
       </TouchableOpacity>
       <View style={styles.photoActionRow}>
@@ -100,11 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   avatarWrapper: { marginBottom: 4 },
-  avatar: { width: 96, height: 96, borderRadius: 48 },
-  avatarPlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  avatarLoading: {
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",

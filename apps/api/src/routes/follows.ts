@@ -6,7 +6,7 @@ import { requireAuth } from "../middleware/auth.js";
 const router = Router();
 router.use(requireAuth);
 
-const USER_SELECT = { id: true, username: true, email: true } as const;
+const USER_SELECT = { id: true, username: true, email: true, profilePhotoUrl: true } as const;
 
 const createSchema = z.object({ followeeId: z.string().uuid() });
 
