@@ -1,14 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { colors } from "../../theme/colors";
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 export default function SettingsScreen({ onBack }: { onBack: () => void }) {
-  const { user, updateDefaultRadiusMiles } = useAuth();
+  const { user, updateUsername, updateDefaultRadiusMiles } = useAuth();
   const [isSaving, setIsSaving] = useState<number | null>(null);
+
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const trimmedUsername = username.trim();
+  const isUsernameValid =
+    trimmedUsername.length >= 3 && trimmedUsername.length <= 24 && USERNAME_REGEX.test(trimmedUsername);
+  const canSaveUsername = isUsernameValid && trimmedUsername !== user?.username && !isSavingUsername;
+
+  const onSaveUsername = async () => {
+    if (!canSaveUsername) return;
+    setUsernameError(null);
+    setIsSavingUsername(true);
+    try {
+      await updateUsername(trimmedUsername);
+    } catch (e) {
+      setUsernameError(e instanceof Error ? e.message : "Couldn't save username");
+    } finally {
+      setIsSavingUsername(false);
+    }
+  };
 
   const onSelectRadius = async (radiusMiles: number) => {
     if (radiusMiles === user?.defaultRadiusMiles) return;
@@ -29,6 +53,21 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
         <Text style={styles.backText}>Me</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Settings</Text>
+
+      <Text style={styles.section}>Username</Text>
+      <View style={styles.usernameRow}>
+        <TextInput
+          style={[styles.input, styles.usernameInput]}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          maxLength={24}
+          value={username}
+          onChangeText={setUsername}
+        />
+        <Button label="Save" small loading={isSavingUsername} disabled={!canSaveUsername} onPress={onSaveUsername} />
+      </View>
+      {usernameError ? <Text style={styles.error}>{usernameError}</Text> : null}
 
       <Text style={styles.section}>Default search radius</Text>
       <Text style={styles.subtitle}>
@@ -65,6 +104,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "600", color: colors.text, marginBottom: 16 },
   section: { fontSize: 16, fontWeight: "600", color: colors.text, marginBottom: 4 },
   subtitle: { color: colors.textMuted, marginBottom: 12 },
+  usernameRow: { flexDirection: "row", gap: 8, marginBottom: 16, alignItems: "center" },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: colors.surface,
+    color: colors.text,
+  },
+  usernameInput: { flex: 1 },
+  error: { color: colors.danger, marginBottom: 16, marginTop: -8 },
   chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   chip: {
     borderWidth: 1,

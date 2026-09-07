@@ -142,6 +142,23 @@ export interface OutgoingFollowRequest extends FollowRequest {
   followee: AuthUser;
 }
 
+export type NotificationType = "FOLLOW_REQUEST" | "FOLLOW_ACCEPTED" | "NEW_LIKEY";
+
+export interface NotificationActor {
+  id: string;
+  username: string;
+  profilePhotoUrl: string | null;
+}
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  data: { followId?: string; likeyId?: string } | null;
+  readAt: string | null;
+  createdAt: string;
+  actor: NotificationActor | null;
+}
+
 export const api = {
   signup: (email: string, username: string, password: string) =>
     request<AuthResponse>("/auth/signup", {
@@ -159,7 +176,7 @@ export const api = {
 
   updateSettings: (
     token: string,
-    data: { defaultRadiusMiles?: number; profilePhotoBase64?: string | null }
+    data: { username?: string; defaultRadiusMiles?: number; profilePhotoBase64?: string | null }
   ) =>
     request<{ user: AuthUser }>("/auth/me", {
       method: "PATCH",
@@ -201,9 +218,11 @@ export const api = {
   denyRequest: (token: string, id: string) =>
     request(`/follows/requests/${id}/deny`, { method: "POST", token }),
 
-  nearbyBusinesses: (token: string, lat: number, lng: number, radiusMiles?: number) =>
+  nearbyBusinesses: (token: string, lat: number, lng: number, radiusMiles?: number, q?: string) =>
     request<{ businesses: Business[] }>(
-      `/businesses/nearby?lat=${lat}&lng=${lng}${radiusMiles ? `&radiusMiles=${radiusMiles}` : ""}`,
+      `/businesses/nearby?lat=${lat}&lng=${lng}${radiusMiles ? `&radiusMiles=${radiusMiles}` : ""}${
+        q ? `&q=${encodeURIComponent(q)}` : ""
+      }`,
       { token }
     ),
 
@@ -271,4 +290,26 @@ export const api = {
 
   deleteLikey: (token: string, id: string) =>
     request<void>(`/likeys/${id}`, { method: "DELETE", token }),
+
+  notifications: (token: string) =>
+    request<{ notifications: AppNotification[] }>("/notifications", { token }),
+
+  markNotificationRead: (token: string, id: string) =>
+    request<void>(`/notifications/${id}/read`, { method: "POST", token }),
+
+  markAllNotificationsRead: (token: string) =>
+    request<void>("/notifications/read-all", { method: "POST", token }),
+
+  registerPushToken: (token: string, pushToken: string) =>
+    request<void>("/notifications/push-tokens", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ token: pushToken }),
+    }),
+
+  unregisterPushToken: (token: string, pushToken: string) =>
+    request<void>(`/notifications/push-tokens/${encodeURIComponent(pushToken)}`, {
+      method: "DELETE",
+      token,
+    }),
 };

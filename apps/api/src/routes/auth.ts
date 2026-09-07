@@ -19,13 +19,15 @@ function hashResetCode(code: string): string {
   return crypto.createHash("sha256").update(code).digest("hex");
 }
 
+const usernameSchema = z
+  .string()
+  .min(3)
+  .max(24)
+  .regex(/^[a-zA-Z0-9_]+$/, "Username may only contain letters, numbers, and underscores");
+
 const signupSchema = z.object({
   email: z.string().email(),
-  username: z
-    .string()
-    .min(3)
-    .max(24)
-    .regex(/^[a-zA-Z0-9_]+$/, "Username may only contain letters, numbers, and underscores"),
+  username: usernameSchema,
   password: z.string().min(8),
 });
 
@@ -174,6 +176,7 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 const updateMeSchema = z.object({
+  username: usernameSchema.optional(),
   defaultRadiusMiles: z.coerce.number().int().min(1).max(100).optional(),
   // ~2M base64 chars =~ 1.5MB decoded image; matches the Likey photo cap.
   profilePhotoBase64: z.string().max(2_000_000).nullable().optional(),
@@ -185,11 +188,20 @@ router.patch("/me", requireAuth, async (req, res) => {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const { defaultRadiusMiles, profilePhotoBase64 } = parsed.data;
+  const { username, defaultRadiusMiles, profilePhotoBase64 } = parsed.data;
+
+  if (username) {
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (existing && existing.id !== req.userId) {
+      res.status(409).json({ error: "That username is already taken" });
+      return;
+    }
+  }
 
   const user = await prisma.user.update({
     where: { id: req.userId },
     data: {
+      ...(username !== undefined ? { username } : {}),
       ...(defaultRadiusMiles !== undefined ? { defaultRadiusMiles } : {}),
       ...(profilePhotoBase64 !== undefined
         ? { profilePhotoUrl: profilePhotoBase64 ? `data:image/jpeg;base64,${profilePhotoBase64}` : null }
