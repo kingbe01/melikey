@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { notify } from "../lib/notifications.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -39,6 +40,17 @@ router.post("/requests", async (req, res) => {
   }
 
   const follow = await prisma.follow.create({ data: { followerId, followeeId } });
+
+  const follower = await prisma.user.findUnique({ where: { id: followerId }, select: { username: true } });
+  await notify({
+    userId: followeeId,
+    type: "FOLLOW_REQUEST",
+    actorId: followerId,
+    data: { followId: follow.id },
+    pushTitle: "New follow request",
+    pushBody: `${follower?.username ?? "Someone"} wants to follow you`,
+  });
+
   res.status(201).json({ follow });
 });
 
@@ -70,6 +82,17 @@ router.post("/requests/:id/approve", async (req, res) => {
     where: { id: follow.id },
     data: { status: "APPROVED" },
   });
+
+  const followee = await prisma.user.findUnique({ where: { id: follow.followeeId }, select: { username: true } });
+  await notify({
+    userId: follow.followerId,
+    type: "FOLLOW_ACCEPTED",
+    actorId: follow.followeeId,
+    data: { followId: follow.id },
+    pushTitle: "Follow request accepted",
+    pushBody: `${followee?.username ?? "Someone"} accepted your follow request`,
+  });
+
   res.json({ follow: updated });
 });
 

@@ -9,7 +9,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bradking.melikey",
-      "buildNumber": "5"
+      "buildNumber": "6"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +42,14 @@
           "photosPermission": "Melikey needs access to your photos so you can attach one to a Likey.",
           "cameraPermission": "Melikey needs access to your camera so you can take a photo for a Likey."
         }
-      ]
-    ]
+      ],
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9fe5f793-1c39-412b-b3c0-5c37bc38625a"
+      }
+    },
+    "owner": "kingbe01"
   }
 }

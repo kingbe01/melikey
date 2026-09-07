@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { notifyMany } from "../lib/notifications.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -109,6 +110,19 @@ router.post("/", async (req, res) => {
     },
     include: { business: true },
   });
+
+  const [author, followers] = await Promise.all([
+    prisma.user.findUnique({ where: { id: req.userId! }, select: { username: true } }),
+    prisma.follow.findMany({ where: { followeeId: req.userId!, status: "APPROVED" }, select: { followerId: true } }),
+  ]);
+  await notifyMany(
+    followers.map((f) => f.followerId),
+    "NEW_LIKEY",
+    req.userId!,
+    { likeyId: likey.id },
+    "New Likey",
+    `${author?.username ?? "Someone you follow"} liked ${business.name}`
+  );
 
   res.status(201).json({ likey });
 });

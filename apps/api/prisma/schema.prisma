@@ -18,6 +18,12 @@ enum LikeyTier {
   DISLIKED
 }
 
+enum NotificationType {
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_LIKEY
+}
+
 model User {
   id                 String   @id @default(uuid())
   email              String   @unique
@@ -31,6 +37,39 @@ model User {
   followsSent         Follow[]            @relation("FollowsSent")
   followsReceived     Follow[]            @relation("FollowsReceived")
   passwordResetTokens PasswordResetToken[]
+  notifications       Notification[]      @relation("NotificationsReceived")
+  pushTokens          PushToken[]
+}
+
+// A device's Expo push token. A user can have several (multiple devices, or
+// a reinstall issuing a new token) — token itself is the unique key so a
+// re-registration from any account just moves it to the current user.
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// In-app notification feed. actorId is who triggered it (nullable so the
+// row survives if that user is ever deleted); data carries the id needed to
+// deep-link (e.g. the Follow id or Likey id).
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  actorId   String?
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation("NotificationsReceived", fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
 
 // A 6-digit code emailed on /auth/forgot-password, redeemed by

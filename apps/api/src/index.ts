@@ -7,6 +7,7 @@ import businessesRouter from "./routes/businesses.js";
 import feedRouter from "./routes/feed.js";
 import followsRouter from "./routes/follows.js";
 import likeysRouter from "./routes/likeys.js";
+import notificationsRouter from "./routes/notifications.js";
 import usersRouter from "./routes/users.js";
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/follows", followsRouter);
 app.use("/businesses", businessesRouter);
 app.use("/likeys", likeysRouter);
 app.use("/feed", feedRouter);
+app.use("/notifications", notificationsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(port, () => {
