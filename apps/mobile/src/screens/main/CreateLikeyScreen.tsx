@@ -277,6 +277,29 @@ export default function CreateLikeyScreen() {
         </View>
       ) : mode === "select" ? (
         <>
+          <Text style={styles.searchByNameLabel}>Search for a specific place</Text>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={[styles.input, styles.searchInput]}
+              placeholder="Place name"
+              autoCorrect={false}
+              value={nameQuery}
+              onChangeText={setNameQuery}
+              onSubmitEditing={onSearchByName}
+            />
+            <Button label="Search" small loading={isSearchingByName} onPress={onSearchByName} />
+          </View>
+          {nameSearchError ? <Text style={styles.error}>{nameSearchError}</Text> : null}
+          {isNameSearchActive ? (
+            <Button
+              label="Back to nearby places"
+              variant="secondary"
+              small
+              style={styles.linkButton}
+              onPress={clearNameSearch}
+            />
+          ) : null}
+
           {isLoadingNearby ? (
             <ActivityIndicator />
           ) : (
@@ -311,29 +334,6 @@ export default function CreateLikeyScreen() {
               }
             />
           )}
-
-          <Text style={styles.searchByNameLabel}>Not seeing it? Search by name</Text>
-          <View style={styles.searchRow}>
-            <TextInput
-              style={[styles.input, styles.searchInput]}
-              placeholder="Place name"
-              autoCorrect={false}
-              value={nameQuery}
-              onChangeText={setNameQuery}
-              onSubmitEditing={onSearchByName}
-            />
-            <Button label="Search" small loading={isSearchingByName} onPress={onSearchByName} />
-          </View>
-          {nameSearchError ? <Text style={styles.error}>{nameSearchError}</Text> : null}
-          {isNameSearchActive ? (
-            <Button
-              label="Back to nearby places"
-              variant="secondary"
-              small
-              style={styles.linkButton}
-              onPress={clearNameSearch}
-            />
-          ) : null}
 
           <Button
             label="Can't find it? Add a new place"
