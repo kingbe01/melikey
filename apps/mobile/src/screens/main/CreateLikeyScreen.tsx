@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -39,12 +39,39 @@ const CATEGORIES: { value: BusinessCategory; label: string }[] = [
 
 const COMMENT_MAX = 200;
 
+// Fixed independent of the user's feed-radius setting — searching a place
+// to post about is a one-off lookup, not the ongoing feed preference.
+const SEARCH_RADIUS_MILES = 25;
+
+interface ManualLocation {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export default function CreateLikeyScreen() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
+
+  const [locationQuery, setLocationQuery] = useState("");
+  const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+
+  // Same memoization reasoning as HomeFeedScreen: a fresh object literal
+  // every render would change loadNearby's identity and re-trigger its effect.
+  const activeCoords = useMemo(
+    () => (manualLocation ? { lat: manualLocation.lat, lng: manualLocation.lng } : coords),
+    [manualLocation, coords]
+  );
 
   const [nearby, setNearby] = useState<Business[]>([]);
   const [isLoadingNearby, setIsLoadingNearby] = useState(false);
+
+  const [nameQuery, setNameQuery] = useState("");
+  const [isSearchingByName, setIsSearchingByName] = useState(false);
+  const [nameSearchError, setNameSearchError] = useState<string | null>(null);
+  const [isNameSearchActive, setIsNameSearchActive] = useState(false);
 
   const [mode, setMode] = useState<"select" | "manual">("select");
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
@@ -62,15 +89,77 @@ export default function CreateLikeyScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!token || !coords) return;
+  const loadNearby = useCallback(async () => {
+    if (!token || !activeCoords) return;
     setIsLoadingNearby(true);
-    api
-      .nearbyBusinesses(token, coords.lat, coords.lng, user?.defaultRadiusMiles)
-      .then((res) => setNearby(res.businesses))
-      .catch(() => setNearby([]))
-      .finally(() => setIsLoadingNearby(false));
-  }, [token, coords, user?.defaultRadiusMiles]);
+    try {
+      const res = await api.nearbyBusinesses(token, activeCoords.lat, activeCoords.lng, SEARCH_RADIUS_MILES);
+      setNearby(res.businesses);
+    } catch {
+      setNearby([]);
+    } finally {
+      setIsLoadingNearby(false);
+    }
+  }, [token, activeCoords]);
+
+  useEffect(() => {
+    setIsNameSearchActive(false);
+    setNameQuery("");
+    setNameSearchError(null);
+    loadNearby();
+  }, [loadNearby]);
+
+  const onSearchByName = async () => {
+    if (!token || !activeCoords || !nameQuery.trim()) return;
+    setNameSearchError(null);
+    setIsSearchingByName(true);
+    try {
+      const res = await api.nearbyBusinesses(
+        token,
+        activeCoords.lat,
+        activeCoords.lng,
+        SEARCH_RADIUS_MILES,
+        nameQuery.trim()
+      );
+      setNearby(res.businesses);
+      setIsNameSearchActive(true);
+    } catch (e) {
+      setNameSearchError(e instanceof Error ? e.message : "Search failed");
+    } finally {
+      setIsSearchingByName(false);
+    }
+  };
+
+  const clearNameSearch = () => {
+    setNameQuery("");
+    setNameSearchError(null);
+    setIsNameSearchActive(false);
+    loadNearby();
+  };
+
+  const onSearchLocation = async () => {
+    if (!token || !locationQuery.trim()) return;
+    setGeocodeError(null);
+    setIsGeocoding(true);
+    try {
+      const res = await api.geocode(token, locationQuery.trim());
+      setManualLocation({ label: res.label, lat: res.latitude, lng: res.longitude });
+      setSelectedBusinessId(null);
+      setIsLocationExpanded(true);
+    } catch (e) {
+      setGeocodeError(e instanceof Error ? e.message : "Couldn't find that location");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const useMyLocation = () => {
+    setManualLocation(null);
+    setLocationQuery("");
+    setGeocodeError(null);
+    setSelectedBusinessId(null);
+    setIsLocationExpanded(true);
+  };
 
   const pickPhoto = async () => {
     const base64 = await pickOrCapturePhoto();
@@ -83,7 +172,7 @@ export default function CreateLikeyScreen() {
     (mode === "select" ? selectedBusinessId !== null : manualName.trim() !== "" && manualCategory !== null);
 
   const onSubmit = async () => {
-    if (!token || !coords || !tier) return;
+    if (!token || !activeCoords || !tier) return;
     Keyboard.dismiss();
     setSubmitError(null);
     setIsSubmitting(true);
@@ -95,8 +184,8 @@ export default function CreateLikeyScreen() {
           category: manualCategory as BusinessCategory,
           city: manualCity.trim() || undefined,
           state: manualState.trim() || undefined,
-          latitude: coords.lat,
-          longitude: coords.lng,
+          latitude: activeCoords.lat,
+          longitude: activeCoords.lng,
         });
         businessId = business.id;
       } else if (selectedBusinessId?.startsWith(PLACE_SUGGESTION_PREFIX)) {
@@ -150,14 +239,6 @@ export default function CreateLikeyScreen() {
     );
   }
 
-  if (locationError) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>{locationError}</Text>
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -166,6 +247,27 @@ export default function CreateLikeyScreen() {
     >
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Where are you?</Text>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={[styles.input, styles.searchInput]}
+          placeholder="Search a city, state, or zip"
+          autoCorrect={false}
+          value={locationQuery}
+          onChangeText={setLocationQuery}
+          onSubmitEditing={onSearchLocation}
+        />
+        <Button label="Search" small loading={isGeocoding} onPress={onSearchLocation} />
+      </View>
+      {geocodeError ? <Text style={styles.error}>{geocodeError}</Text> : null}
+      {locationError && !manualLocation ? (
+        <Text style={styles.error}>{locationError} Search a location above instead.</Text>
+      ) : null}
+      {manualLocation ? (
+        <View style={styles.manualLocationRow}>
+          <Text style={styles.manualLocationText}>Showing places near: {manualLocation.label}</Text>
+          <Button label="Use my location" variant="secondary" small onPress={useMyLocation} />
+        </View>
+      ) : null}
       {!isLocationExpanded ? (
         <View style={styles.row}>
           <Text style={styles.confirmedPlaceName}>
@@ -202,9 +304,37 @@ export default function CreateLikeyScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.muted}>No logged places near you yet</Text>}
+              ListEmptyComponent={
+                <Text style={styles.muted}>
+                  {isNameSearchActive ? `No results for "${nameQuery}"` : "No logged places near you yet"}
+                </Text>
+              }
             />
           )}
+
+          <Text style={styles.searchByNameLabel}>Not seeing it? Search by name</Text>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={[styles.input, styles.searchInput]}
+              placeholder="Place name"
+              autoCorrect={false}
+              value={nameQuery}
+              onChangeText={setNameQuery}
+              onSubmitEditing={onSearchByName}
+            />
+            <Button label="Search" small loading={isSearchingByName} onPress={onSearchByName} />
+          </View>
+          {nameSearchError ? <Text style={styles.error}>{nameSearchError}</Text> : null}
+          {isNameSearchActive ? (
+            <Button
+              label="Back to nearby places"
+              variant="secondary"
+              small
+              style={styles.linkButton}
+              onPress={clearNameSearch}
+            />
+          ) : null}
+
           <Button
             label="Can't find it? Add a new place"
             variant="secondary"
@@ -332,6 +462,19 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 8, paddingBottom: 48 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.background },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },
+  searchRow: { flexDirection: "row", gap: 8 },
+  searchInput: { flex: 1 },
+  searchByNameLabel: { color: colors.textMuted, fontSize: 13, marginTop: 8, marginBottom: 6 },
+  manualLocationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: colors.primaryLight,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  manualLocationText: { color: colors.primaryDark, fontWeight: "600", flexShrink: 1 },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",

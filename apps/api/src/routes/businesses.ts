@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { searchNearbyPlaces } from "../lib/appleMaps.js";
+import { searchNearbyPlaces, searchPlacesByName } from "../lib/appleMaps.js";
 import { findNearbyBusinesses } from "../lib/geo.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -12,6 +12,7 @@ const nearbySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   radiusMiles: z.coerce.number().positive().max(500).optional().default(10),
+  q: z.string().min(1).optional(),
 });
 
 // A SUGGESTION_PREFIX-prefixed id marks an Apple Maps result that isn't
@@ -22,13 +23,36 @@ const COMMUNITY_RESULTS_FALLBACK_THRESHOLD = 5;
 // v1: primary source is businesses the community has already logged nearby.
 // When that's sparse (cold-start areas), we fall back to Apple Maps search so
 // there's still something to pick from; manual entry always covers the rest.
+// Passing "q" (the place isn't turning up in that browse list) instead
+// searches Apple Maps by that name directly, skipping the fallback gating.
 router.get("/nearby", async (req, res) => {
   const parsed = nearbySchema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const { lat, lng, radiusMiles } = parsed.data;
+  const { lat, lng, radiusMiles, q } = parsed.data;
+
+  if (q) {
+    const community = await findNearbyBusinesses(lat, lng, radiusMiles, 20, q);
+    const placeSuggestions = await searchPlacesByName(q, lat, lng, radiusMiles);
+    const alreadySaved = new Set(
+      (
+        await prisma.business.findMany({
+          where: { externalPlaceId: { in: placeSuggestions.map((p) => p.externalPlaceId) } },
+          select: { externalPlaceId: true },
+        })
+      ).map((b) => b.externalPlaceId)
+    );
+    const suggestions = placeSuggestions
+      .filter((p) => !alreadySaved.has(p.externalPlaceId))
+      .map((p) => ({ ...p, id: `${SUGGESTION_PREFIX}${p.externalPlaceId}` }));
+
+    const businesses = [...community, ...suggestions].sort((a, b) => a.distanceMiles - b.distanceMiles);
+    res.json({ businesses });
+    return;
+  }
+
   const community = await findNearbyBusinesses(lat, lng, radiusMiles);
 
   if (community.length >= COMMUNITY_RESULTS_FALLBACK_THRESHOLD) {

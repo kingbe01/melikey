@@ -19,7 +19,8 @@ export async function findNearbyBusinesses(
   latitude: number,
   longitude: number,
   radiusMiles: number,
-  limit = 20
+  limit = 20,
+  nameQuery?: string
 ): Promise<NearbyBusiness[]> {
   return prisma.$queryRaw<NearbyBusiness[]>`
     SELECT * FROM (
@@ -32,6 +33,7 @@ export async function findNearbyBusinesses(
           ))
         )) AS "distanceMiles"
       FROM "Business"
+      ${nameQuery ? Prisma.sql`WHERE name ILIKE ${`%${nameQuery}%`}` : Prisma.empty}
     ) AS sub
     WHERE "distanceMiles" <= ${radiusMiles}
     ORDER BY "distanceMiles" ASC

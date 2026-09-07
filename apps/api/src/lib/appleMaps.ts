@@ -167,25 +167,16 @@ export async function geocodeLocation(query: string): Promise<GeocodeResult | nu
   };
 }
 
-// v1 fallback for cold-start areas with nothing logged yet (see routes/businesses.ts).
-// Only called when community results are sparse, to keep call volume down.
-export async function searchNearbyPlaces(
+function toPlaceSuggestions(
+  places: AppleSearchResult[],
   latitude: number,
   longitude: number,
   radiusMiles: number
-): Promise<PlaceSuggestion[]> {
-  const accessToken = await getAccessToken();
-  if (!accessToken) return [];
-
-  const [restaurants, entertainment] = await Promise.all([
-    search(accessToken, "restaurant", latitude, longitude),
-    search(accessToken, "entertainment", latitude, longitude),
-  ]);
-
+): PlaceSuggestion[] {
   const seen = new Set<string>();
   const results: PlaceSuggestion[] = [];
 
-  for (const place of [...restaurants, ...entertainment]) {
+  for (const place of places) {
     if (seen.has(place.id) || !place.coordinate || !place.name) continue;
     seen.add(place.id);
 
@@ -206,4 +197,38 @@ export async function searchNearbyPlaces(
   }
 
   return results;
+}
+
+// v1 fallback for cold-start areas with nothing logged yet (see routes/businesses.ts).
+// Only called when community results are sparse, to keep call volume down.
+export async function searchNearbyPlaces(
+  latitude: number,
+  longitude: number,
+  radiusMiles: number
+): Promise<PlaceSuggestion[]> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) return [];
+
+  const [restaurants, entertainment] = await Promise.all([
+    search(accessToken, "restaurant", latitude, longitude),
+    search(accessToken, "entertainment", latitude, longitude),
+  ]);
+
+  return toPlaceSuggestions([...restaurants, ...entertainment], latitude, longitude, radiusMiles);
+}
+
+// Named-place lookup: used when a specific place isn't turning up in the
+// generic nearby browse (see routes/businesses.ts's "q" param) — searches
+// Apple Maps by the actual name instead of a generic category term.
+export async function searchPlacesByName(
+  query: string,
+  latitude: number,
+  longitude: number,
+  radiusMiles: number
+): Promise<PlaceSuggestion[]> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) return [];
+
+  const results = await search(accessToken, query, latitude, longitude);
+  return toPlaceSuggestions(results, latitude, longitude, radiusMiles);
 }
