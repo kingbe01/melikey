@@ -1,3 +1,5 @@
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +26,7 @@ import {
 } from "../../lib/api";
 import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
+import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 
 const TIERS: { value: LikeyTier; label: string }[] = [
@@ -51,6 +54,7 @@ interface ManualLocation {
 
 export default function CreateLikeyScreen() {
   const { token } = useAuth();
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "CreateLikey">>();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [locationQuery, setLocationQuery] = useState("");
@@ -166,6 +170,32 @@ export default function CreateLikeyScreen() {
     if (base64) setPhotoBase64(base64);
   };
 
+  // Full reset back to "select a place" — used by both Cancel and re-tapping
+  // the Post Likey tab, which previously left whatever place/tier/comment
+  // was already filled in sitting there instead of starting over.
+  const resetForm = useCallback(() => {
+    setMode("select");
+    setSelectedBusinessId(null);
+    setIsLocationExpanded(true);
+    setManualName("");
+    setManualCategory(null);
+    setManualCity("");
+    setManualState("");
+    setNameQuery("");
+    setIsNameSearchActive(false);
+    setNameSearchError(null);
+    setTier(null);
+    setComment("");
+    setPhotoBase64(null);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", resetForm);
+    return unsubscribe;
+  }, [navigation, resetForm]);
+
   const canSubmit =
     !isSubmitting &&
     tier !== null &&
@@ -212,17 +242,8 @@ export default function CreateLikeyScreen() {
         photoBase64: photoBase64 ?? undefined,
       });
 
+      resetForm();
       setSubmitSuccess(true);
-      setMode("select");
-      setSelectedBusinessId(null);
-      setIsLocationExpanded(true);
-      setManualName("");
-      setManualCategory(null);
-      setManualCity("");
-      setManualState("");
-      setTier(null);
-      setComment("");
-      setPhotoBase64(null);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Couldn't post this Likey");
     } finally {
@@ -278,7 +299,10 @@ export default function CreateLikeyScreen() {
           <Text style={styles.confirmedPlaceName}>
             {mode === "select" ? nearby.find((b) => b.id === selectedBusinessId)?.name : manualName}
           </Text>
-          <Button label="Change" variant="secondary" small onPress={() => setIsLocationExpanded(true)} />
+          <View style={styles.confirmedPlaceActions}>
+            <Button label="Change" variant="secondary" small onPress={() => setIsLocationExpanded(true)} />
+            <Button label="Cancel" variant="dangerOutline" small onPress={resetForm} />
+          </View>
         </View>
       ) : mode === "select" ? (
         <>
@@ -493,7 +517,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   rowSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  confirmedPlaceName: { fontWeight: "600", color: colors.text },
+  confirmedPlaceName: { fontWeight: "600", color: colors.text, flexShrink: 1 },
+  confirmedPlaceActions: { flexDirection: "row", gap: 8 },
   suggestedTag: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   input: {
     borderWidth: 1,
