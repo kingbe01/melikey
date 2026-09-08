@@ -127,18 +127,38 @@ model Business {
   likeys Likey[]
 }
 
-model Likey {
-  id         String    @id @default(uuid())
-  userId     String
-  businessId String
-  tier       LikeyTier
-  comment    String?
-  photoUrl   String?
-  createdAt  DateTime  @default(now())
+// A book/movie/TV show — no location at all, unlike Business. A Likey
+// points to exactly one of Business or MediaItem (see Likey below).
+model MediaItem {
+  id        String   @id @default(uuid())
+  title     String
+  // Fixed pre-select, matches Business.subcategory's precedent: "Book",
+  // "Movie", or "TV Show" — not open text.
+  type      String
+  creator   String?
+  year      String?
+  createdAt DateTime @default(now())
 
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
+  likeys Likey[]
+}
+
+model Likey {
+  id          String    @id @default(uuid())
+  userId      String
+  // Exactly one of businessId/mediaItemId is set — enforced at the app
+  // layer (Zod), not the DB, since Postgres has no native XOR constraint.
+  businessId  String?
+  mediaItemId String?
+  tier        LikeyTier
+  comment     String?
+  photoUrl    String?
+  createdAt   DateTime  @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  business  Business?  @relation(fields: [businessId], references: [id])
+  mediaItem MediaItem? @relation(fields: [mediaItemId], references: [id])
 
   @@index([businessId])
+  @@index([mediaItemId])
   @@index([userId])
 }

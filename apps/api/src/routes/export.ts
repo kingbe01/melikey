@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth.js";
 const router = Router();
 router.use(requireAuth);
 
-const CATEGORIES = ["restaurant", "entertainment", "general"] as const;
+const CATEGORIES = ["restaurant", "entertainment", "general", "media"] as const;
 
 const exportSchema = z.object({
   scope: z.enum(["mine", "friends", "both"]).default("mine"),
@@ -39,23 +39,32 @@ router.get("/likeys", async (req, res) => {
   }
   userIds = [...new Set(userIds)];
 
+  const businessCategories = categories.filter((c) => c !== "media");
+  const wantsMedia = categories.includes("media");
+
   const likeys =
     userIds.length === 0
       ? []
       : await prisma.likey.findMany({
-          where: { userId: { in: userIds }, business: { category: { in: categories } } },
-          include: { business: true, user: { select: { username: true } } },
+          where: {
+            userId: { in: userIds },
+            OR: [
+              ...(businessCategories.length > 0 ? [{ business: { category: { in: businessCategories } } }] : []),
+              ...(wantsMedia ? [{ mediaItemId: { not: null } }] : []),
+            ],
+          },
+          include: { business: true, mediaItem: true, user: { select: { username: true } } },
           orderBy: { createdAt: "desc" },
         });
 
   const buffer = await buildLikeysWorkbook(
     likeys.map((l) => ({
       author: l.user.username,
-      category: l.business.category,
-      subcategory: l.business.subcategory,
-      businessName: l.business.name,
-      city: l.business.city,
-      state: l.business.state,
+      category: l.business?.category ?? "media",
+      subcategory: l.business?.subcategory ?? l.mediaItem?.type ?? null,
+      name: l.business?.name ?? l.mediaItem?.title ?? "",
+      city: l.business?.city ?? null,
+      state: l.business?.state ?? null,
       tier: l.tier,
       comment: l.comment,
       hasPhoto: !!l.photoUrl,

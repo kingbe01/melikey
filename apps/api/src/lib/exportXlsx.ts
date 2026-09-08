@@ -4,7 +4,9 @@ export interface ExportRow {
   author: string;
   category: string;
   subcategory: string | null;
-  businessName: string;
+  // A business name or a media title, depending on category — "Name" in the
+  // sheet rather than "Business" since it now covers both.
+  name: string;
   city: string | null;
   state: string | null;
   tier: string;
@@ -21,7 +23,7 @@ export async function buildLikeysWorkbook(rows: ExportRow[]): Promise<Buffer> {
     { header: "Author", key: "author", width: 18 },
     { header: "Category", key: "category", width: 14 },
     { header: "Subcategory", key: "subcategory", width: 16 },
-    { header: "Business", key: "businessName", width: 28 },
+    { header: "Name", key: "name", width: 28 },
     { header: "City", key: "city", width: 16 },
     { header: "State", key: "state", width: 8 },
     { header: "Tier", key: "tier", width: 12 },

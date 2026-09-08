@@ -9,6 +9,7 @@ import exportRouter from "./routes/export.js";
 import feedRouter from "./routes/feed.js";
 import followsRouter from "./routes/follows.js";
 import likeysRouter from "./routes/likeys.js";
+import mediaItemsRouter from "./routes/mediaItems.js";
 import notificationsRouter from "./routes/notifications.js";
 import usersRouter from "./routes/users.js";
 
@@ -31,6 +32,7 @@ app.use("/users", usersRouter);
 app.use("/follows", followsRouter);
 app.use("/businesses", businessesRouter);
 app.use("/likeys", likeysRouter);
+app.use("/media-items", mediaItemsRouter);
 app.use("/feed", feedRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/export", exportRouter);

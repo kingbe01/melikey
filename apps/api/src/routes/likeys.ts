@@ -4,25 +4,31 @@ import { notifyMany } from "../lib/notifications.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 import { SERVICE_SUBCATEGORIES } from "./businesses.js";
+import { MEDIA_TYPES } from "./mediaItems.js";
 
 const router = Router();
 router.use(requireAuth);
 
 const USER_SELECT = { id: true, username: true, profilePhotoUrl: true } as const;
 
-const createSchema = z.object({
-  businessId: z.string().uuid(),
-  tier: z.enum(["LIKED", "FINE", "DISLIKED"]),
-  comment: z.string().max(200).optional(),
-  // ~2M base64 chars =~ 1.5MB decoded image; keeps request bodies bounded.
-  photoBase64: z.string().max(2_000_000).optional(),
-});
+const createSchema = z
+  .object({
+    businessId: z.string().uuid().optional(),
+    mediaItemId: z.string().uuid().optional(),
+    tier: z.enum(["LIKED", "FINE", "DISLIKED"]),
+    comment: z.string().max(200).optional(),
+    // ~2M base64 chars =~ 1.5MB decoded image; keeps request bodies bounded.
+    photoBase64: z.string().max(2_000_000).optional(),
+  })
+  .refine((data) => !!data.businessId !== !!data.mediaItemId, {
+    message: "Provide exactly one of businessId or mediaItemId",
+  });
 
 const TIER_RANK = { LIKED: 0, FINE: 1, DISLIKED: 2 } as const;
 
 const likeyFiltersSchema = z.object({
   q: z.string().optional(),
-  category: z.enum(["restaurant", "entertainment", "general"]).optional(),
+  category: z.enum(["restaurant", "entertainment", "general", "media"]).optional(),
   tier: z.enum(["LIKED", "FINE", "DISLIKED"]).optional(),
   sort: z.enum(["recent", "oldest", "tier", "business"]).optional().default("recent"),
 });
@@ -34,12 +40,18 @@ async function findLikeysForUser(userId: string, filters: z.infer<typeof likeyFi
     where: {
       userId,
       tier,
-      business: { category },
+      ...(category === "media" ? { mediaItemId: { not: null } } : category ? { business: { category } } : {}),
       ...(q
-        ? { OR: [{ comment: { contains: q, mode: "insensitive" } }, { business: { name: { contains: q, mode: "insensitive" } } }] }
+        ? {
+            OR: [
+              { comment: { contains: q, mode: "insensitive" } },
+              { business: { name: { contains: q, mode: "insensitive" } } },
+              { mediaItem: { title: { contains: q, mode: "insensitive" } } },
+            ],
+          }
         : {}),
     },
-    include: { business: true },
+    include: { business: true, mediaItem: true },
     orderBy:
       sort === "oldest"
         ? { createdAt: "asc" }
@@ -142,12 +154,65 @@ router.get("/services", async (req, res) => {
   });
 });
 
+const mediaFiltersSchema = z.object({
+  q: z.string().optional(),
+  type: z.enum(MEDIA_TYPES).optional(),
+});
+
+// Books/movies/TV shows from people you follow — search/browse only, never
+// surfaced in the location-based feed (they have no location at all).
+router.get("/media", async (req, res) => {
+  const parsed = mediaFiltersSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const { q, type } = parsed.data;
+
+  const follows = await prisma.follow.findMany({
+    where: { followerId: req.userId, status: "APPROVED" },
+    select: { followeeId: true },
+  });
+  const followeeIds = follows.map((f) => f.followeeId);
+  if (followeeIds.length === 0) {
+    res.json({ likeys: [] });
+    return;
+  }
+
+  const likeys = await prisma.likey.findMany({
+    where: {
+      AND: [
+        { userId: { in: followeeIds } },
+        { mediaItem: { type } },
+        ...(q
+          ? [
+              {
+                OR: [
+                  { comment: { contains: q, mode: "insensitive" as const } },
+                  { mediaItem: { title: { contains: q, mode: "insensitive" as const } } },
+                ],
+              },
+            ]
+          : []),
+      ],
+    },
+    include: { mediaItem: true, user: { select: USER_SELECT } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json({ likeys: likeys.map(({ user, ...rest }) => ({ ...rest, author: user })) });
+});
+
 // Single-post lookup, e.g. deep-linking from a "new Likey" notification.
 // Same visibility rule as GET /user/:id: only the author or an approved follower can see it.
 router.get("/:id", async (req, res) => {
   const likey = await prisma.likey.findUnique({
     where: { id: req.params.id },
-    include: { business: true, user: { select: { id: true, username: true, profilePhotoUrl: true } } },
+    include: {
+      business: true,
+      mediaItem: true,
+      user: { select: { id: true, username: true, profilePhotoUrl: true } },
+    },
   });
   if (!likey) {
     res.status(404).json({ error: "Likey not found" });
@@ -174,25 +239,37 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const { businessId, tier, comment, photoBase64 } = parsed.data;
+  const { businessId, mediaItemId, tier, comment, photoBase64 } = parsed.data;
 
-  const business = await prisma.business.findUnique({ where: { id: businessId } });
-  if (!business) {
-    res.status(404).json({ error: "Business not found" });
-    return;
+  let itemName: string;
+  if (businessId) {
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
+    if (!business) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+    itemName = business.name;
+  } else {
+    const mediaItem = await prisma.mediaItem.findUnique({ where: { id: mediaItemId } });
+    if (!mediaItem) {
+      res.status(404).json({ error: "Media item not found" });
+      return;
+    }
+    itemName = mediaItem.title;
   }
 
   const likey = await prisma.likey.create({
     data: {
       userId: req.userId!,
       businessId,
+      mediaItemId,
       tier,
       comment,
       // v1 stopgap: photo stored inline as a data URL until object storage is
       // chosen (Neon is fine at dogfood scale; revisit before wider rollout).
       photoUrl: photoBase64 ? `data:image/jpeg;base64,${photoBase64}` : undefined,
     },
-    include: { business: true },
+    include: { business: true, mediaItem: true },
   });
 
   const [author, followers] = await Promise.all([
@@ -205,7 +282,7 @@ router.post("/", async (req, res) => {
     req.userId!,
     { likeyId: likey.id },
     "New Likey",
-    `${author?.username ?? "Someone you follow"} liked ${business.name}`
+    `${author?.username ?? "Someone you follow"} liked ${itemName}`
   );
 
   res.status(201).json({ likey });
@@ -240,7 +317,7 @@ router.patch("/:id", async (req, res) => {
         ? { photoUrl: photoBase64 ? `data:image/jpeg;base64,${photoBase64}` : null }
         : {}),
     },
-    include: { business: true },
+    include: { business: true, mediaItem: true },
   });
 
   res.json({ likey });
