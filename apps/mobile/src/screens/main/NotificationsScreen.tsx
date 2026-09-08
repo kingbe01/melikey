@@ -39,6 +39,7 @@ export default function NotificationsScreen() {
   const { refresh: refreshUnreadCount, markAllRead } = useNotifications();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingFollowId, setPendingFollowId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -76,6 +77,29 @@ export default function NotificationsScreen() {
     }
   };
 
+  // A follow request notification can't link anywhere useful — you don't
+  // follow them back yet, so you can't view their Likeys. Resolve it right
+  // here instead, same as the Requests list on the People tab.
+  const onRespondToRequest = async (notification: AppNotification, action: "approve" | "deny") => {
+    const followId = notification.data?.followId;
+    if (!token || !followId) return;
+    setPendingFollowId(followId);
+    try {
+      if (action === "approve") {
+        await api.approveRequest(token, followId);
+      } else {
+        await api.denyRequest(token, followId);
+      }
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      refreshUnreadCount();
+    } catch {
+      // Already handled elsewhere (e.g. from the People tab) — drop it either way.
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+    } finally {
+      setPendingFollowId(null);
+    }
+  };
+
   const onMarkAllRead = async () => {
     await markAllRead();
     setNotifications((prev) => prev.map((n) => (n.readAt ? n : { ...n, readAt: new Date().toISOString() })));
@@ -95,16 +119,43 @@ export default function NotificationsScreen() {
           data={notifications}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={[styles.row, !item.readAt && styles.rowUnread]} onPress={() => onPressItem(item)}>
-              <Avatar uri={item.actor?.profilePhotoUrl ?? null} size={36} />
-              <View style={styles.rowText}>
-                <Text style={styles.message}>{messageFor(item)}</Text>
-                <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+          renderItem={({ item }) => {
+            const followId = item.data?.followId;
+            const isPending = pendingFollowId === followId;
+            return (
+              <View style={[styles.row, !item.readAt && styles.rowUnread]}>
+                <TouchableOpacity style={styles.rowMain} onPress={() => onPressItem(item)}>
+                  <Avatar uri={item.actor?.profilePhotoUrl ?? null} size={36} />
+                  <View style={styles.rowText}>
+                    <Text style={styles.message}>{messageFor(item)}</Text>
+                    <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+                  </View>
+                  {!item.readAt ? <View style={styles.dot} /> : null}
+                </TouchableOpacity>
+                {item.type === "FOLLOW_REQUEST" && followId ? (
+                  <View style={styles.requestActions}>
+                    <Button
+                      label="Deny"
+                      variant="dangerOutline"
+                      small
+                      loading={isPending}
+                      disabled={isPending}
+                      style={styles.requestButton}
+                      onPress={() => onRespondToRequest(item, "deny")}
+                    />
+                    <Button
+                      label="Accept"
+                      small
+                      loading={isPending}
+                      disabled={isPending}
+                      style={styles.requestButton}
+                      onPress={() => onRespondToRequest(item, "approve")}
+                    />
+                  </View>
+                ) : null}
               </View>
-              {!item.readAt ? <View style={styles.dot} /> : null}
-            </TouchableOpacity>
-          )}
+            );
+          }}
           ListEmptyComponent={<Text style={styles.empty}>No notifications yet</Text>}
         />
       )}
@@ -118,9 +169,6 @@ const styles = StyleSheet.create({
   loadingIndicator: { marginTop: 24 },
   list: { padding: 16, paddingBottom: 48, gap: 8 },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
     padding: 12,
     borderRadius: 10,
     backgroundColor: colors.surface,
@@ -128,6 +176,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   rowUnread: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  rowMain: { flexDirection: "row", alignItems: "center", gap: 12 },
+  requestActions: { flexDirection: "row", justifyContent: "flex-end", gap: 8, marginTop: 10 },
+  requestButton: { minWidth: 80 },
   rowText: { flex: 1, gap: 2 },
   message: { fontSize: 15, color: colors.text },
   time: { fontSize: 13, color: colors.textMuted },
