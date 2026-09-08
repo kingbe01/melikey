@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
@@ -6,7 +5,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Linking,
   RefreshControl,
   StyleSheet,
   Text,
@@ -17,22 +15,21 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
-import { api, SERVICE_SUBCATEGORIES, type LikeyWithAuthor, type ServiceSubcategory } from "../../lib/api";
-import { formatLocation } from "../../lib/formatLocation";
+import { api, MEDIA_TYPES, type LikeyWithAuthor, type MediaType } from "../../lib/api";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
-import CreateServiceLikeyScreen from "./CreateServiceLikeyScreen";
+import CreateMediaLikeyScreen from "./CreateMediaLikeyScreen";
 
-export default function ServicesScreen() {
+export default function OtherScreen() {
   const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
   const [isCreating, setIsCreating] = useState(false);
   const [query, setQuery] = useState("");
-  const [subcategory, setSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [type, setType] = useState<MediaType | null>(null);
   const [likeys, setLikeys] = useState<LikeyWithAuthor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +40,14 @@ export default function ServicesScreen() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.services(token, { q: query.trim() || undefined, subcategory: subcategory ?? undefined });
+      const res = await api.media(token, { q: query.trim() || undefined, type: type ?? undefined });
       setLikeys(res.likeys);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't load recommendations");
     } finally {
       setIsLoading(false);
     }
-  }, [token, query, subcategory]);
+  }, [token, query, type]);
 
   useEffect(() => {
     load();
@@ -58,7 +55,7 @@ export default function ServicesScreen() {
 
   if (isCreating) {
     return (
-      <CreateServiceLikeyScreen
+      <CreateMediaLikeyScreen
         onDone={() => {
           setIsCreating(false);
           load();
@@ -80,14 +77,14 @@ export default function ServicesScreen() {
       ListHeaderComponent={
         <View style={styles.header}>
           <Text style={styles.subtitle}>
-            Search recommendations from people you follow for home services — landscaping, plumbing, and more.
+            Search recommendations from people you follow for books, movies, and TV shows.
           </Text>
-          <Button label="Recommend a service" style={styles.createButton} onPress={() => setIsCreating(true)} />
+          <Button label="Recommend something" style={styles.createButton} onPress={() => setIsCreating(true)} />
 
           <View style={styles.searchRow}>
             <TextInput
               style={[styles.input, styles.searchInput]}
-              placeholder="Search by name or note"
+              placeholder="Search by title or note"
               placeholderTextColor={colors.textMuted}
               autoCorrect={false}
               value={query}
@@ -97,19 +94,12 @@ export default function ServicesScreen() {
           </View>
 
           <View style={styles.chipRow}>
-            <TouchableOpacity
-              style={[styles.chip, subcategory === null && styles.chipSelected]}
-              onPress={() => setSubcategory(null)}
-            >
-              <Text style={subcategory === null ? styles.chipTextSelected : undefined}>All</Text>
+            <TouchableOpacity style={[styles.chip, type === null && styles.chipSelected]} onPress={() => setType(null)}>
+              <Text style={type === null ? styles.chipTextSelected : undefined}>All</Text>
             </TouchableOpacity>
-            {SERVICE_SUBCATEGORIES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.chip, subcategory === s && styles.chipSelected]}
-                onPress={() => setSubcategory(s)}
-              >
-                <Text style={subcategory === s ? styles.chipTextSelected : undefined}>{s}</Text>
+            {MEDIA_TYPES.map((t) => (
+              <TouchableOpacity key={t} style={[styles.chip, type === t && styles.chipSelected]} onPress={() => setType(t)}>
+                <Text style={type === t ? styles.chipTextSelected : undefined}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -121,16 +111,14 @@ export default function ServicesScreen() {
       ListEmptyComponent={
         !isLoading ? (
           <Text style={styles.empty}>
-            {query || subcategory
+            {query || type
               ? "No recommendations match those filters."
               : "No recommendations yet from people you follow — be the first."}
           </Text>
         ) : null
       }
       renderItem={({ item }) => {
-        // /likeys/services only ever returns "general" business likeys.
-        const business = item.business!;
-        const location = formatLocation(business.city, business.state);
+        const mediaItem = item.mediaItem!;
         return (
           <TouchableOpacity
             style={styles.card}
@@ -145,33 +133,12 @@ export default function ServicesScreen() {
                 <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
               </View>
             </View>
-            <Text style={styles.businessName}>{business.name}</Text>
+            <Text style={styles.businessName}>{mediaItem.title}</Text>
             <Text style={styles.muted}>
-              {business.subcategory}
-              {location ? ` · ${location}` : ""} · {formatRelativeTime(item.createdAt)}
+              {mediaItem.type}
+              {mediaItem.creator ? ` · ${mediaItem.creator}` : ""}
+              {mediaItem.year ? ` · ${mediaItem.year}` : ""} · {formatRelativeTime(item.createdAt)}
             </Text>
-            {business.phone || business.email ? (
-              <View style={styles.contactRow}>
-                {business.phone ? (
-                  <TouchableOpacity
-                    style={styles.contactButton}
-                    onPress={() => Linking.openURL(`tel:${business.phone}`)}
-                  >
-                    <Ionicons name="call-outline" size={14} color={colors.primaryDark} />
-                    <Text style={styles.contactButtonText}>{business.phone}</Text>
-                  </TouchableOpacity>
-                ) : null}
-                {business.email ? (
-                  <TouchableOpacity
-                    style={styles.contactButton}
-                    onPress={() => Linking.openURL(`mailto:${business.email}`)}
-                  >
-                    <Ionicons name="mail-outline" size={14} color={colors.primaryDark} />
-                    <Text style={styles.contactButtonText}>{business.email}</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            ) : null}
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
             {item.photoUrl ? (
               <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
@@ -214,7 +181,6 @@ const styles = StyleSheet.create({
   },
   chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   chipTextSelected: { color: colors.primaryDark, fontWeight: "600" },
-  linkButton: { alignSelf: "flex-start" },
   loadingIndicator: { marginTop: 4 },
   error: { color: colors.danger },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 24, paddingHorizontal: 16 },
@@ -236,7 +202,4 @@ const styles = StyleSheet.create({
   comment: { fontSize: 15, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
   muted: { color: colors.textMuted, fontSize: 14 },
-  contactRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
-  contactButton: { flexDirection: "row", alignItems: "center", gap: 4 },
-  contactButtonText: { color: colors.primaryDark, fontSize: 13, fontWeight: "600" },
 });

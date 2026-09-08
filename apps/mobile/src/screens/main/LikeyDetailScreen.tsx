@@ -40,15 +40,17 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
       .finally(() => setIsLoading(false));
   }, [token, likeyId]);
 
-  const hasCoordinates = likey?.business.latitude !== null && likey?.business.longitude !== null;
+  const business = likey?.business ?? null;
+  const mediaItem = likey?.mediaItem ?? null;
+  const hasCoordinates = business?.latitude !== null && business?.latitude !== undefined && business?.longitude !== null && business?.longitude !== undefined;
 
   const openInAppleMaps = () => {
-    if (!likey || !hasCoordinates) return;
-    const query = encodeURIComponent(likey.business.name);
-    Linking.openURL(`https://maps.apple.com/?ll=${likey.business.latitude},${likey.business.longitude}&q=${query}`);
+    if (!business || !hasCoordinates) return;
+    const query = encodeURIComponent(business.name);
+    Linking.openURL(`https://maps.apple.com/?ll=${business.latitude},${business.longitude}&q=${query}`);
   };
 
-  const location = likey ? formatLocation(likey.business.city, likey.business.state) : null;
+  const location = business ? formatLocation(business.city, business.state) : null;
 
   return (
     <>
@@ -73,35 +75,43 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
           </View>
 
           <View style={styles.placeRow}>
-            <Text style={styles.businessName}>{likey.business.name}</Text>
+            <Text style={styles.businessName}>{business ? business.name : mediaItem!.title}</Text>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[likey.tier] }]}>
               <Text style={styles.tierBadgeText}>{TIER_LABELS[likey.tier]}</Text>
             </View>
           </View>
-          <Text style={styles.muted}>
-            {likey.business.category}
-            {likey.business.subcategory ? ` · ${likey.business.subcategory}` : ""}
-            {location ? ` · ${location}` : ""}
-          </Text>
+          {business ? (
+            <Text style={styles.muted}>
+              {business.category}
+              {business.subcategory ? ` · ${business.subcategory}` : ""}
+              {location ? ` · ${location}` : ""}
+            </Text>
+          ) : (
+            <Text style={styles.muted}>
+              {mediaItem!.type}
+              {mediaItem!.creator ? ` · ${mediaItem!.creator}` : ""}
+              {mediaItem!.year ? ` · ${mediaItem!.year}` : ""}
+            </Text>
+          )}
 
-          {likey.business.phone || likey.business.email ? (
+          {business?.phone || business?.email ? (
             <View style={styles.contactRow}>
-              {likey.business.phone ? (
+              {business.phone ? (
                 <TouchableOpacity
                   style={styles.contactButton}
-                  onPress={() => Linking.openURL(`tel:${likey.business.phone}`)}
+                  onPress={() => Linking.openURL(`tel:${business.phone}`)}
                 >
                   <Ionicons name="call-outline" size={15} color={colors.primaryDark} />
-                  <Text style={styles.contactButtonText}>{likey.business.phone}</Text>
+                  <Text style={styles.contactButtonText}>{business.phone}</Text>
                 </TouchableOpacity>
               ) : null}
-              {likey.business.email ? (
+              {business.email ? (
                 <TouchableOpacity
                   style={styles.contactButton}
-                  onPress={() => Linking.openURL(`mailto:${likey.business.email}`)}
+                  onPress={() => Linking.openURL(`mailto:${business.email}`)}
                 >
                   <Ionicons name="mail-outline" size={15} color={colors.primaryDark} />
-                  <Text style={styles.contactButtonText}>{likey.business.email}</Text>
+                  <Text style={styles.contactButtonText}>{business.email}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -119,8 +129,8 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
               <MapView
                 style={styles.map}
                 initialRegion={{
-                  latitude: likey.business.latitude!,
-                  longitude: likey.business.longitude!,
+                  latitude: business!.latitude!,
+                  longitude: business!.longitude!,
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
@@ -129,7 +139,7 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
                 pitchEnabled={false}
                 rotateEnabled={false}
               >
-                <Marker coordinate={{ latitude: likey.business.latitude!, longitude: likey.business.longitude! }} />
+                <Marker coordinate={{ latitude: business!.latitude!, longitude: business!.longitude! }} />
               </MapView>
 
               <TouchableOpacity style={styles.mapsButton} onPress={openInAppleMaps}>

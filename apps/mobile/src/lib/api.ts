@@ -105,12 +105,26 @@ export interface Business {
 // Business yet — selecting one must go through createBusiness first.
 export const PLACE_SUGGESTION_PREFIX = "suggestion:";
 
+// Fixed pre-select list for books/movies/TV shows — mirrors MEDIA_TYPES on
+// the API. No location, unlike Business.
+export const MEDIA_TYPES = ["Book", "Movie", "TV Show"] as const;
+export type MediaType = (typeof MEDIA_TYPES)[number];
+
+export interface MediaItem {
+  id: string;
+  title: string;
+  type: MediaType;
+  creator: string | null;
+  year: string | null;
+}
+
 export type LikeyTier = "LIKED" | "FINE" | "DISLIKED";
 export type MyLikeysSort = "recent" | "oldest" | "tier" | "business";
+export type LikeyCategory = BusinessCategory | "media";
 
 export interface LikeyFilters {
   q?: string;
-  category?: BusinessCategory;
+  category?: LikeyCategory;
   tier?: LikeyTier;
   sort?: MyLikeysSort;
 }
@@ -131,7 +145,9 @@ export interface Likey {
   comment: string | null;
   photoUrl: string | null;
   createdAt: string;
-  business: Business;
+  // Exactly one of business/mediaItem is set.
+  business: Business | null;
+  mediaItem: MediaItem | null;
 }
 
 export interface LikeyWithAuthor extends Likey {
@@ -291,11 +307,28 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  // Exactly one of businessId/mediaItemId must be set — enforced by the API.
   createLikey: (
     token: string,
-    data: { businessId: string; tier: LikeyTier; comment?: string; photoBase64?: string }
+    data: {
+      businessId?: string;
+      mediaItemId?: string;
+      tier: LikeyTier;
+      comment?: string;
+      photoBase64?: string;
+    }
   ) =>
     request<{ likey: Likey }>("/likeys", {
+      method: "POST",
+      token,
+      body: JSON.stringify(data),
+    }),
+
+  createMediaItem: (
+    token: string,
+    data: { title: string; type: MediaType; creator?: string; year?: string }
+  ) =>
+    request<{ mediaItem: MediaItem }>("/media-items", {
       method: "POST",
       token,
       body: JSON.stringify(data),
@@ -333,6 +366,14 @@ export const api = {
     if (filters.state) params.set("state", filters.state);
     const qs = params.toString();
     return request<{ likeys: LikeyWithAuthor[] }>(`/likeys/services${qs ? `?${qs}` : ""}`, { token });
+  },
+
+  media: (token: string, filters: { q?: string; type?: MediaType } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.q) params.set("q", filters.q);
+    if (filters.type) params.set("type", filters.type);
+    const qs = params.toString();
+    return request<{ likeys: LikeyWithAuthor[] }>(`/likeys/media${qs ? `?${qs}` : ""}`, { token });
   },
 
   myLikeys: (token: string, filters: LikeyFilters = {}) =>

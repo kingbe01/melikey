@@ -1,6 +1,6 @@
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import type { BusinessCategory } from "./api";
+import type { LikeyCategory } from "./api";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -15,7 +15,7 @@ export type ExportScope = "mine" | "friends" | "both";
 export async function exportLikeys(
   token: string,
   scope: ExportScope,
-  categories: BusinessCategory[]
+  categories: LikeyCategory[]
 ): Promise<void> {
   const params = new URLSearchParams({ scope });
   if (categories.length > 0) params.set("categories", categories.join(","));

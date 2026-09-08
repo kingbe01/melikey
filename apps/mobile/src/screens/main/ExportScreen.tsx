@@ -3,7 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
-import type { BusinessCategory } from "../../lib/api";
+import type { LikeyCategory } from "../../lib/api";
 import { exportLikeys, type ExportScope } from "../../lib/exportLikeys";
 import { colors } from "../../theme/colors";
 
@@ -13,23 +13,24 @@ const SCOPES: { value: ExportScope; label: string }[] = [
   { value: "both", label: "Both" },
 ];
 
-const CATEGORIES: { value: BusinessCategory; label: string }[] = [
+const CATEGORIES: { value: LikeyCategory; label: string }[] = [
   { value: "restaurant", label: "Restaurant" },
   { value: "entertainment", label: "Entertainment" },
   { value: "general", label: "General" },
+  { value: "media", label: "Other" },
 ];
 
 export default function ExportScreen({ onBack }: { onBack: () => void }) {
   const { token } = useAuth();
 
   const [scope, setScope] = useState<ExportScope>("mine");
-  const [categories, setCategories] = useState<Set<BusinessCategory>>(
-    () => new Set(["restaurant", "entertainment", "general"])
+  const [categories, setCategories] = useState<Set<LikeyCategory>>(
+    () => new Set(["restaurant", "entertainment", "general", "media"])
   );
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggleCategory = (value: BusinessCategory) => {
+  const toggleCategory = (value: LikeyCategory) => {
     setCategories((prev) => {
       const next = new Set(prev);
       if (next.has(value)) next.delete(value);

@@ -12,11 +12,12 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
+import { api, type Likey, type LikeyCategory, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
-import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
+import { type LikeyGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
+import { subjectLine } from "../../lib/likeySubject";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
@@ -37,7 +38,7 @@ export default function FriendLikeysView({
   const { token } = useAuth();
 
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<BusinessCategory | null>(null);
+  const [category, setCategory] = useState<LikeyCategory | null>(null);
   const [tier, setTier] = useState<LikeyTier | null>(null);
   const [sort, setSort] = useState<MyLikeysSort>("recent");
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
@@ -75,6 +76,7 @@ export default function FriendLikeysView({
   const locationOptions = useMemo(() => {
     const set = new Set<string>();
     for (const likey of likeys) {
+      if (!likey.business) continue;
       const location = formatLocation(likey.business.city, likey.business.state);
       if (location) set.add(location);
     }
@@ -82,22 +84,25 @@ export default function FriendLikeysView({
   }, [likeys]);
 
   const filteredLikeys = useMemo(
-    () => (selectedLocation ? likeys.filter((l) => formatLocation(l.business.city, l.business.state) === selectedLocation) : likeys),
+    () =>
+      selectedLocation
+        ? likeys.filter((l) => l.business && formatLocation(l.business.city, l.business.state) === selectedLocation)
+        : likeys,
     [likeys, selectedLocation]
   );
 
-  const groups = useMemo<BusinessGroup[]>(() => groupLikeysByPlace(filteredLikeys, sort), [filteredLikeys, sort]);
+  const groups = useMemo<LikeyGroup[]>(() => groupLikeysByPlace(filteredLikeys, sort), [filteredLikeys, sort]);
 
-  const toggleExpanded = (businessId: string) => {
+  const toggleExpanded = (key: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(businessId)) next.delete(businessId);
-      else next.add(businessId);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
 
-  const openPlaceDetail = (business: Likey["business"]) => {
+  const openPlaceDetail = (business: NonNullable<Likey["business"]>) => {
     setViewingPlace({
       name: business.name,
       category: business.category,
@@ -112,7 +117,7 @@ export default function FriendLikeysView({
 
   const renderEntry = (item: Likey) => (
     <View style={styles.entryContent}>
-      <TouchableOpacity onPress={() => openPlaceDetail(item.business)}>
+      <TouchableOpacity disabled={!item.business} onPress={() => item.business && openPlaceDetail(item.business)}>
         <View style={styles.cardHeader}>
           <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
           <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -139,7 +144,7 @@ export default function FriendLikeysView({
       style={styles.container}
       contentContainerStyle={styles.list}
       data={groups}
-      keyExtractor={(group) => group.business.id}
+      keyExtractor={(group) => group.key}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
@@ -224,33 +229,32 @@ export default function FriendLikeysView({
         ) : null
       }
       renderItem={({ item: group }) => {
-        const location = formatLocation(group.business.city, group.business.state);
+        const name = group.business?.name ?? group.mediaItem?.title ?? "";
+        const line = group.business
+          ? `${group.business.category}${formatLocation(group.business.city, group.business.state) ? ` · ${formatLocation(group.business.city, group.business.state)}` : ""}`
+          : subjectLine(group.items[0]);
 
         if (group.items.length === 1) {
           return (
             <View style={styles.card}>
-              <TouchableOpacity onPress={() => openPlaceDetail(group.business)}>
-                <Text style={styles.businessName}>{group.business.name}</Text>
-                <Text style={styles.muted}>
-                  {group.business.category}
-                  {location ? ` · ${location}` : ""}
-                </Text>
+              <TouchableOpacity disabled={!group.business} onPress={() => group.business && openPlaceDetail(group.business)}>
+                <Text style={styles.businessName}>{name}</Text>
+                <Text style={styles.muted}>{line}</Text>
               </TouchableOpacity>
               {renderEntry(group.items[0])}
             </View>
           );
         }
 
-        const isExpanded = expandedIds.has(group.business.id);
+        const isExpanded = expandedIds.has(group.key);
         const mostRecent = group.items[0];
         return (
           <View style={styles.card}>
-            <TouchableOpacity style={styles.groupHeader} onPress={() => toggleExpanded(group.business.id)}>
+            <TouchableOpacity style={styles.groupHeader} onPress={() => toggleExpanded(group.key)}>
               <View style={styles.groupHeaderText}>
-                <Text style={styles.businessName}>{group.business.name}</Text>
+                <Text style={styles.businessName}>{name}</Text>
                 <Text style={styles.muted}>
-                  {group.business.category}
-                  {location ? ` · ${location}` : ""} · last {formatRelativeTime(mostRecent.createdAt)}
+                  {line} · last {formatRelativeTime(mostRecent.createdAt)}
                 </Text>
               </View>
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[mostRecent.tier] }]}>

@@ -8,11 +8,12 @@ import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { colors } from "../../theme/colors";
 import AboutScreen from "./AboutScreen";
 import ExportScreen from "./ExportScreen";
+import MyLikeysScreen from "./MyLikeysScreen";
 import SettingsScreen from "./SettingsScreen";
 
 export default function ProfileScreen() {
   const { user, logout, updateProfilePhoto } = useAuth();
-  const [activeView, setActiveView] = useState<"none" | "settings" | "about" | "export">("none");
+  const [activeView, setActiveView] = useState<"none" | "settings" | "about" | "export" | "mylikeys">("none");
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
 
@@ -24,6 +25,9 @@ export default function ProfileScreen() {
   }
   if (activeView === "export") {
     return <ExportScreen onBack={() => setActiveView("none")} />;
+  }
+  if (activeView === "mylikeys") {
+    return <MyLikeysScreen onBack={() => setActiveView("none")} />;
   }
 
   const onChangePhoto = async () => {
@@ -101,6 +105,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
       <Text style={styles.email}>{user?.email}</Text>
+      <Button label="My Likeys" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("mylikeys")} />
       <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("settings")} />
       <Button label="Export data" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("export")} />
       <Button label="About melikey" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("about")} />

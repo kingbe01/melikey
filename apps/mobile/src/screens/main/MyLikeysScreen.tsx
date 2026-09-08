@@ -20,14 +20,16 @@ import {
   SERVICE_SUBCATEGORIES,
   type BusinessCategory,
   type Likey,
+  type LikeyCategory,
   type LikeyTier,
   type MyLikeysSort,
   type ServiceSubcategory,
 } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
-import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
+import { type LikeyGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
+import { subjectLine, subjectName } from "../../lib/likeySubject";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
@@ -42,11 +44,11 @@ const PLACE_CATEGORIES: { value: BusinessCategory; label: string }[] = [
   { value: "general", label: "General" },
 ];
 
-export default function MyLikeysScreen() {
+export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
   const { token } = useAuth();
 
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<BusinessCategory | null>(null);
+  const [category, setCategory] = useState<LikeyCategory | null>(null);
   const [tier, setTier] = useState<LikeyTier | null>(null);
   const [sort, setSort] = useState<MyLikeysSort>("recent");
 
@@ -103,13 +105,13 @@ export default function MyLikeysScreen() {
     }, [load])
   );
 
-  const groups = useMemo<BusinessGroup[]>(() => groupLikeysByPlace(likeys, sort), [likeys, sort]);
+  const groups = useMemo<LikeyGroup[]>(() => groupLikeysByPlace(likeys, sort), [likeys, sort]);
 
-  const toggleExpanded = (businessId: string) => {
+  const toggleExpanded = (key: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(businessId)) next.delete(businessId);
-      else next.add(businessId);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -120,13 +122,26 @@ export default function MyLikeysScreen() {
     setDraftComment(item.comment ?? "");
     setDraftPhotoUrl(item.photoUrl);
     setDraftPhotoBase64(undefined);
-    setCanEditFullPlace(!item.business.externalPlaceId);
-    setDraftBusinessId(item.business.id);
-    setDraftBusinessName(item.business.name);
-    setDraftBusinessCategory(item.business.category);
-    setDraftBusinessSubcategory(item.business.subcategory);
-    setDraftBusinessCity(item.business.city ?? "");
-    setDraftBusinessState(item.business.state ?? "");
+    // Media items have no edit endpoint yet — every submission is its own
+    // row anyway (no dedup), so this only ever hides fields, never blocks a
+    // shared entity from being changed by someone else's edit.
+    if (item.business) {
+      setCanEditFullPlace(!item.business.externalPlaceId);
+      setDraftBusinessId(item.business.id);
+      setDraftBusinessName(item.business.name);
+      setDraftBusinessCategory(item.business.category);
+      setDraftBusinessSubcategory(item.business.subcategory);
+      setDraftBusinessCity(item.business.city ?? "");
+      setDraftBusinessState(item.business.state ?? "");
+    } else {
+      setCanEditFullPlace(false);
+      setDraftBusinessId(null);
+      setDraftBusinessName("");
+      setDraftBusinessCategory(null);
+      setDraftBusinessSubcategory(null);
+      setDraftBusinessCity("");
+      setDraftBusinessState("");
+    }
   };
 
   const cancelEdit = () => setEditingId(null);
@@ -149,10 +164,10 @@ export default function MyLikeysScreen() {
   const saveEdit = async () => {
     if (!token || !editingId || !draftTier) return;
     if (canEditFullPlace && !draftBusinessName.trim()) return;
-    if (!draftBusinessCategory) return;
+    if (draftBusinessId && !draftBusinessCategory) return;
     setIsSavingEdit(true);
     try {
-      if (draftBusinessId) {
+      if (draftBusinessId && draftBusinessCategory) {
         await api.updateBusiness(token, draftBusinessId, {
           category: draftBusinessCategory,
           subcategory: draftBusinessCategory === "general" ? (draftBusinessSubcategory ?? undefined) : undefined,
@@ -180,7 +195,7 @@ export default function MyLikeysScreen() {
   };
 
   const onDelete = (item: Likey) => {
-    Alert.alert("Delete this Likey?", `${item.business.name} — this can't be undone.`, [
+    Alert.alert("Delete this Likey?", `${subjectName(item)} — this can't be undone.`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -198,7 +213,7 @@ export default function MyLikeysScreen() {
     ]);
   };
 
-  const openPlaceDetail = (business: Likey["business"]) => {
+  const openPlaceDetail = (business: NonNullable<Likey["business"]>) => {
     setViewingPlace({
       name: business.name,
       category: business.category,
@@ -214,57 +229,63 @@ export default function MyLikeysScreen() {
   const renderEntry = (item: Likey) =>
     editingId === item.id ? (
       <View style={styles.entryContent}>
-        {canEditFullPlace ? (
+        {draftBusinessId ? (
           <>
-            <Text style={styles.fieldLabel}>Place name</Text>
-            <TextInput style={styles.input} value={draftBusinessName} onChangeText={setDraftBusinessName} />
+            {canEditFullPlace ? (
+              <>
+                <Text style={styles.fieldLabel}>Place name</Text>
+                <TextInput style={styles.input} value={draftBusinessName} onChangeText={setDraftBusinessName} />
+              </>
+            ) : (
+              <Text style={styles.fieldLabel}>{draftBusinessName} — category can be corrected, other details are shared</Text>
+            )}
+            <Text style={styles.fieldLabel}>Category</Text>
+            <View style={styles.chipRow}>
+              {(canEditFullPlace ? PLACE_CATEGORIES : PLACE_CATEGORIES.filter((c) => c.value !== "general")).map((c) => (
+                <TouchableOpacity
+                  key={c.value}
+                  style={[styles.chip, draftBusinessCategory === c.value && styles.chipSelected]}
+                  onPress={() => setDraftBusinessCategory(c.value)}
+                >
+                  <Text style={draftBusinessCategory === c.value && styles.chipTextSelected}>{c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {canEditFullPlace && draftBusinessCategory === "general" ? (
+              <View style={styles.chipRow}>
+                {SERVICE_SUBCATEGORIES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
+                    onPress={() => setDraftBusinessSubcategory(s)}
+                  >
+                    <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
+            {canEditFullPlace ? (
+              <View style={styles.optionRow}>
+                <TextInput
+                  style={[styles.input, styles.cityInput]}
+                  placeholder="City"
+                  value={draftBusinessCity}
+                  onChangeText={setDraftBusinessCity}
+                />
+                <TextInput
+                  style={[styles.input, styles.stateInput]}
+                  placeholder="State"
+                  autoCapitalize="characters"
+                  maxLength={2}
+                  value={draftBusinessState}
+                  onChangeText={setDraftBusinessState}
+                />
+              </View>
+            ) : null}
           </>
         ) : (
-          <Text style={styles.fieldLabel}>{draftBusinessName} — category can be corrected, other details are shared</Text>
+          <Text style={styles.fieldLabel}>{subjectName(item)} — details aren't editable here</Text>
         )}
-        <Text style={styles.fieldLabel}>Category</Text>
-        <View style={styles.chipRow}>
-          {(canEditFullPlace ? PLACE_CATEGORIES : PLACE_CATEGORIES.filter((c) => c.value !== "general")).map((c) => (
-            <TouchableOpacity
-              key={c.value}
-              style={[styles.chip, draftBusinessCategory === c.value && styles.chipSelected]}
-              onPress={() => setDraftBusinessCategory(c.value)}
-            >
-              <Text style={draftBusinessCategory === c.value && styles.chipTextSelected}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {canEditFullPlace && draftBusinessCategory === "general" ? (
-          <View style={styles.chipRow}>
-            {SERVICE_SUBCATEGORIES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
-                onPress={() => setDraftBusinessSubcategory(s)}
-              >
-                <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : null}
-        {canEditFullPlace ? (
-          <View style={styles.optionRow}>
-            <TextInput
-              style={[styles.input, styles.cityInput]}
-              placeholder="City"
-              value={draftBusinessCity}
-              onChangeText={setDraftBusinessCity}
-            />
-            <TextInput
-              style={[styles.input, styles.stateInput]}
-              placeholder="State"
-              autoCapitalize="characters"
-              maxLength={2}
-              value={draftBusinessState}
-              onChangeText={setDraftBusinessState}
-            />
-          </View>
-        ) : null}
         <Text style={styles.fieldLabel}>Your rating</Text>
         <View style={styles.chipRow}>
           {(["LIKED", "FINE", "DISLIKED"] as LikeyTier[]).map((t) => (
@@ -304,7 +325,7 @@ export default function MyLikeysScreen() {
           <Button
             label={isSavingEdit ? "Saving..." : "Save"}
             loading={isSavingEdit}
-            disabled={!draftBusinessCategory || (canEditFullPlace && !draftBusinessName.trim())}
+            disabled={(draftBusinessId ? !draftBusinessCategory : false) || (canEditFullPlace && !draftBusinessName.trim())}
             onPress={saveEdit}
             style={styles.actionButton}
           />
@@ -312,7 +333,10 @@ export default function MyLikeysScreen() {
       </View>
     ) : (
       <View style={styles.entryContent}>
-        <TouchableOpacity onPress={() => openPlaceDetail(item.business)}>
+        <TouchableOpacity
+          disabled={!item.business}
+          onPress={() => item.business && openPlaceDetail(item.business)}
+        >
           <View style={styles.cardHeader}>
             <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -343,12 +367,18 @@ export default function MyLikeysScreen() {
       style={styles.container}
       contentContainerStyle={styles.list}
       data={groups}
-      keyExtractor={(group) => group.business.id}
+      keyExtractor={(group) => group.key}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.filters}>
+          {onBack ? (
+            <TouchableOpacity style={styles.backRow} onPress={onBack}>
+              <Ionicons name="chevron-back" size={20} color={colors.primary} />
+              <Text style={styles.backText}>Me</Text>
+            </TouchableOpacity>
+          ) : null}
           <TextInput
             style={styles.input}
             placeholder="Search your Likeys"
@@ -400,33 +430,32 @@ export default function MyLikeysScreen() {
         )
       }
       renderItem={({ item: group }) => {
-        const location = formatLocation(group.business.city, group.business.state);
+        const name = group.business?.name ?? group.mediaItem?.title ?? "";
+        const line = group.business
+          ? `${group.business.category}${formatLocation(group.business.city, group.business.state) ? ` · ${formatLocation(group.business.city, group.business.state)}` : ""}`
+          : subjectLine(group.items[0]);
 
         if (group.items.length === 1) {
           return (
             <View style={styles.card}>
-              <TouchableOpacity onPress={() => openPlaceDetail(group.business)}>
-                <Text style={styles.businessName}>{group.business.name}</Text>
-                <Text style={styles.muted}>
-                  {group.business.category}
-                  {location ? ` · ${location}` : ""}
-                </Text>
+              <TouchableOpacity disabled={!group.business} onPress={() => group.business && openPlaceDetail(group.business)}>
+                <Text style={styles.businessName}>{name}</Text>
+                <Text style={styles.muted}>{line}</Text>
               </TouchableOpacity>
               {renderEntry(group.items[0])}
             </View>
           );
         }
 
-        const isExpanded = expandedIds.has(group.business.id);
+        const isExpanded = expandedIds.has(group.key);
         const mostRecent = group.items[0];
         return (
           <View style={styles.card}>
-            <TouchableOpacity style={styles.groupHeader} onPress={() => toggleExpanded(group.business.id)}>
+            <TouchableOpacity style={styles.groupHeader} onPress={() => toggleExpanded(group.key)}>
               <View style={styles.groupHeaderText}>
-                <Text style={styles.businessName}>{group.business.name}</Text>
+                <Text style={styles.businessName}>{name}</Text>
                 <Text style={styles.muted}>
-                  {group.business.category}
-                  {location ? ` · ${location}` : ""} · last {formatRelativeTime(mostRecent.createdAt)}
+                  {line} · last {formatRelativeTime(mostRecent.createdAt)}
                 </Text>
               </View>
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[mostRecent.tier] }]}>
@@ -462,6 +491,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, gap: 12, flexGrow: 1 },
   filters: { gap: 8, marginBottom: 8 },
+  backRow: { flexDirection: "row", alignItems: "center" },
+  backText: { color: colors.primary, fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

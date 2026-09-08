@@ -15,7 +15,7 @@ import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
 import FriendLikeysView from "../screens/main/FriendLikeysView";
 import HomeFeedScreen from "../screens/main/HomeFeedScreen";
 import LikeyDetailScreen from "../screens/main/LikeyDetailScreen";
-import MyLikeysScreen from "../screens/main/MyLikeysScreen";
+import OtherScreen from "../screens/main/OtherScreen";
 import PeopleScreen from "../screens/main/PeopleScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
 import ServicesScreen from "../screens/main/ServicesScreen";
@@ -24,7 +24,7 @@ import { colors } from "../theme/colors";
 export type MainTabParamList = {
   Feed: undefined;
   CreateLikey: undefined;
-  MyLikeys: undefined;
+  Other: undefined;
   People: undefined;
   Services: undefined;
   Profile: undefined;
@@ -42,7 +42,7 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 const TAB_ICONS: Record<keyof MainTabParamList, { focused: IoniconName; unfocused: IoniconName }> = {
   Feed: { focused: "location", unfocused: "location-outline" },
   CreateLikey: { focused: "add-circle", unfocused: "add-circle-outline" },
-  MyLikeys: { focused: "albums", unfocused: "albums-outline" },
+  Other: { focused: "book", unfocused: "book-outline" },
   People: { focused: "people", unfocused: "people-outline" },
   Services: { focused: "construct", unfocused: "construct-outline" },
   Profile: { focused: "person-circle", unfocused: "person-circle-outline" },
@@ -99,7 +99,7 @@ function Tabs() {
       <Tab.Screen name="Feed" component={HomeFeedScreen} options={{ title: "Places" }} />
       <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
       <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post Likey" }} />
-      <Tab.Screen name="MyLikeys" component={MyLikeysScreen} options={{ title: "My Likeys" }} />
+      <Tab.Screen name="Other" component={OtherScreen} options={{ title: "Other" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Me" }} />
     </Tab.Navigator>
