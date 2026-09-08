@@ -197,8 +197,8 @@ export default function CreateLikeyScreen() {
           address: selected.address ?? undefined,
           city: selected.city ?? undefined,
           state: selected.state ?? undefined,
-          latitude: selected.latitude,
-          longitude: selected.longitude,
+          latitude: selected.latitude ?? undefined,
+          longitude: selected.longitude ?? undefined,
           externalPlaceId: selected.externalPlaceId,
         });
         businessId = business.id;

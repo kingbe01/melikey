@@ -4,6 +4,7 @@ export const CATEGORY_FILTERS: { value: BusinessCategory | null; label: string }
   { value: null, label: "All" },
   { value: "restaurant", label: "Restaurant" },
   { value: "entertainment", label: "Entertainment" },
+  { value: "general", label: "General" },
 ];
 
 export const TIER_FILTERS: { value: LikeyTier | null; label: string }[] = [

@@ -68,17 +68,33 @@ export interface FollowRequest {
   id: string;
 }
 
-export type BusinessCategory = "restaurant" | "entertainment";
+export type BusinessCategory = "restaurant" | "entertainment" | "general";
+
+// Fixed pre-select list for the "general" category — mirrors
+// SERVICE_SUBCATEGORIES on the API.
+export const SERVICE_SUBCATEGORIES = [
+  "Landscaping",
+  "Painting",
+  "HVAC",
+  "Electrical",
+  "Plumbing",
+  "Drywall",
+  "General Repair",
+] as const;
+export type ServiceSubcategory = (typeof SERVICE_SUBCATEGORIES)[number];
 
 export interface Business {
   id: string;
   name: string;
   category: BusinessCategory;
+  subcategory: ServiceSubcategory | null;
   address: string | null;
   city: string | null;
   state: string | null;
-  latitude: number;
-  longitude: number;
+  // Null for "general" (service-provider) businesses — manually entered,
+  // no map lookup, never used for GPS-radius surfacing.
+  latitude: number | null;
+  longitude: number | null;
   distanceMiles?: number;
   externalPlaceId?: string;
 }
@@ -235,11 +251,12 @@ export const api = {
     data: {
       name: string;
       category: BusinessCategory;
+      subcategory?: ServiceSubcategory;
       address?: string;
       city?: string;
       state?: string;
-      latitude: number;
-      longitude: number;
+      latitude?: number;
+      longitude?: number;
       externalPlaceId?: string;
     }
   ) =>
@@ -279,6 +296,19 @@ export const api = {
     request<{ likeys: Likey[] }>(`/likeys/user/${userId}${buildLikeyFilterQuery(filters)}`, { token }),
 
   likey: (token: string, id: string) => request<{ likey: LikeyWithAuthor }>(`/likeys/${id}`, { token }),
+
+  services: (
+    token: string,
+    filters: { q?: string; subcategory?: ServiceSubcategory; city?: string; state?: string } = {}
+  ) => {
+    const params = new URLSearchParams();
+    if (filters.q) params.set("q", filters.q);
+    if (filters.subcategory) params.set("subcategory", filters.subcategory);
+    if (filters.city) params.set("city", filters.city);
+    if (filters.state) params.set("state", filters.state);
+    const qs = params.toString();
+    return request<{ likeys: LikeyWithAuthor[] }>(`/likeys/services${qs ? `?${qs}` : ""}`, { token });
+  },
 
   myLikeys: (token: string, filters: LikeyFilters = {}) =>
     request<{ likeys: Likey[] }>(`/likeys/mine${buildLikeyFilterQuery(filters)}`, { token }),

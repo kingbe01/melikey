@@ -27,8 +27,10 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
       .finally(() => setIsLoading(false));
   }, [token, likeyId]);
 
+  const hasCoordinates = likey?.business.latitude !== null && likey?.business.longitude !== null;
+
   const openInAppleMaps = () => {
-    if (!likey) return;
+    if (!likey || !hasCoordinates) return;
     const query = encodeURIComponent(likey.business.name);
     Linking.openURL(`https://maps.apple.com/?ll=${likey.business.latitude},${likey.business.longitude}&q=${query}`);
   };
@@ -64,32 +66,37 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
           </View>
           <Text style={styles.muted}>
             {likey.business.category}
+            {likey.business.subcategory ? ` · ${likey.business.subcategory}` : ""}
             {location ? ` · ${location}` : ""}
           </Text>
 
           {likey.comment ? <Text style={styles.comment}>{likey.comment}</Text> : null}
           {likey.photoUrl ? <Image source={{ uri: likey.photoUrl }} style={styles.photo} /> : null}
 
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: likey.business.latitude,
-              longitude: likey.business.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          >
-            <Marker coordinate={{ latitude: likey.business.latitude, longitude: likey.business.longitude }} />
-          </MapView>
+          {hasCoordinates ? (
+            <>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: likey.business.latitude!,
+                  longitude: likey.business.longitude!,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                pitchEnabled={false}
+                rotateEnabled={false}
+              >
+                <Marker coordinate={{ latitude: likey.business.latitude!, longitude: likey.business.longitude! }} />
+              </MapView>
 
-          <TouchableOpacity style={styles.mapsButton} onPress={openInAppleMaps}>
-            <Ionicons name="map-outline" size={18} color={colors.surface} />
-            <Text style={styles.mapsButtonText}>Open in Apple Maps</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.mapsButton} onPress={openInAppleMaps}>
+                <Ionicons name="map-outline" size={18} color={colors.surface} />
+                <Text style={styles.mapsButtonText}>Open in Apple Maps</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
         </ScrollView>
       )}
     </View>

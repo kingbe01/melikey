@@ -6,11 +6,13 @@ import { colors } from "../../theme/colors";
 export interface PlaceInfo {
   name: string;
   category: string;
+  subcategory?: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
-  latitude: number;
-  longitude: number;
+  // Null for "general" (service-provider) recs — manually entered, no map lookup.
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // Apple's Maps Server API only exposes address + coordinates — no phone,
@@ -19,8 +21,10 @@ export interface PlaceInfo {
 // own backend, not the public API.
 export default function PlaceDetailView({ place, onBack }: { place: PlaceInfo; onBack: () => void }) {
   const location = place.city && place.state ? `${place.city}, ${place.state}` : place.city || place.state || null;
+  const hasCoordinates = place.latitude !== null && place.longitude !== null;
 
   const openInAppleMaps = () => {
+    if (!hasCoordinates) return;
     const query = encodeURIComponent(place.name);
     Linking.openURL(`https://maps.apple.com/?ll=${place.latitude},${place.longitude}&q=${query}`);
   };
@@ -32,35 +36,42 @@ export default function PlaceDetailView({ place, onBack }: { place: PlaceInfo; o
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: place.latitude,
-          longitude: place.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        pitchEnabled={false}
-        rotateEnabled={false}
-      >
-        <Marker coordinate={{ latitude: place.latitude, longitude: place.longitude }} />
-      </MapView>
+      {hasCoordinates ? (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: place.latitude!,
+            longitude: place.longitude!,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          pitchEnabled={false}
+          rotateEnabled={false}
+        >
+          <Marker coordinate={{ latitude: place.latitude!, longitude: place.longitude! }} />
+        </MapView>
+      ) : null}
 
       <View style={styles.details}>
         <Text style={styles.name}>{place.name}</Text>
-        <Text style={styles.category}>{place.category}</Text>
+        <Text style={styles.category}>
+          {place.category}
+          {place.subcategory ? ` · ${place.subcategory}` : ""}
+        </Text>
         {place.address ? (
           <Text style={styles.address}>{place.address}</Text>
         ) : location ? (
           <Text style={styles.address}>{location}</Text>
         ) : null}
 
-        <TouchableOpacity style={styles.mapsButton} onPress={openInAppleMaps}>
-          <Ionicons name="map-outline" size={18} color={colors.surface} />
-          <Text style={styles.mapsButtonText}>Open in Apple Maps</Text>
-        </TouchableOpacity>
+        {hasCoordinates ? (
+          <TouchableOpacity style={styles.mapsButton} onPress={openInAppleMaps}>
+            <Ionicons name="map-outline" size={18} color={colors.surface} />
+            <Text style={styles.mapsButtonText}>Open in Apple Maps</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );

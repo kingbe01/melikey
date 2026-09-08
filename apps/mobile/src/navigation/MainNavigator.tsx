@@ -17,6 +17,7 @@ import LikeyDetailScreen from "../screens/main/LikeyDetailScreen";
 import MyLikeysScreen from "../screens/main/MyLikeysScreen";
 import PeopleScreen from "../screens/main/PeopleScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
+import ServicesScreen from "../screens/main/ServicesScreen";
 import { colors } from "../theme/colors";
 
 export type MainTabParamList = {
@@ -24,6 +25,7 @@ export type MainTabParamList = {
   CreateLikey: undefined;
   MyLikeys: undefined;
   People: undefined;
+  Services: undefined;
   Profile: undefined;
 };
 
@@ -41,6 +43,7 @@ const TAB_ICONS: Record<keyof MainTabParamList, { focused: IoniconName; unfocuse
   CreateLikey: { focused: "add-circle", unfocused: "add-circle-outline" },
   MyLikeys: { focused: "albums", unfocused: "albums-outline" },
   People: { focused: "people", unfocused: "people-outline" },
+  Services: { focused: "construct", unfocused: "construct-outline" },
   Profile: { focused: "person-circle", unfocused: "person-circle-outline" },
 };
 
@@ -93,6 +96,7 @@ function Tabs() {
       <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post a Likey" }} />
       <Tab.Screen name="MyLikeys" component={MyLikeysScreen} options={{ title: "My Likeys" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
+      <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Me" }} />
     </Tab.Navigator>
   );

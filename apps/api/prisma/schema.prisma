@@ -106,11 +106,17 @@ model Business {
   id              String   @id @default(uuid())
   name            String
   category        String
+  // Only set when category = "general" — one of the fixed service types
+  // (Landscaping, Painting, HVAC, Electrical, Plumbing, Drywall, General Repair).
+  subcategory     String?
   address         String?
   city            String?
   state           String?
-  latitude        Float
-  longitude       Float
+  // Nullable: "general" (service-provider) businesses are manually entered
+  // with no Apple Maps lookup, so there's no coordinate to geocode — they're
+  // surfaced by search, never by GPS radius, so this is fine to leave unset.
+  latitude        Float?
+  longitude       Float?
   externalPlaceId String?  @unique
   createdAt       DateTime @default(now())
 

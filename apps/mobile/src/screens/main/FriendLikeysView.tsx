@@ -96,6 +96,7 @@ export default function FriendLikeysView({
         setViewingPlace({
           name: item.business.name,
           category: item.business.category,
+          subcategory: item.business.subcategory,
           address: item.business.address,
           city: item.business.city,
           state: item.business.state,

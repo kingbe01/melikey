@@ -8,6 +8,19 @@ import { requireAuth } from "../middleware/auth.js";
 const router = Router();
 router.use(requireAuth);
 
+// General (service-provider) recommendations, e.g. "who do you use for X" —
+// a fixed, closed list rather than free text, matching the product decision
+// to keep this a simple pre-select rather than an open category system.
+export const SERVICE_SUBCATEGORIES = [
+  "Landscaping",
+  "Painting",
+  "HVAC",
+  "Electrical",
+  "Plumbing",
+  "Drywall",
+  "General Repair",
+] as const;
+
 const nearbySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
@@ -78,16 +91,29 @@ router.get("/nearby", async (req, res) => {
   res.json({ businesses });
 });
 
-const createSchema = z.object({
-  name: z.string().min(1).max(120),
-  category: z.enum(["restaurant", "entertainment"]),
-  address: z.string().max(200).optional(),
-  city: z.string().max(100).optional(),
-  state: z.string().max(100).optional(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  externalPlaceId: z.string().optional(),
-});
+const createSchema = z
+  .object({
+    name: z.string().min(1).max(120),
+    category: z.enum(["restaurant", "entertainment", "general"]),
+    subcategory: z.enum(SERVICE_SUBCATEGORIES).optional(),
+    address: z.string().max(200).optional(),
+    city: z.string().max(100).optional(),
+    state: z.string().max(100).optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    externalPlaceId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.category === "general" && !data.subcategory) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["subcategory"], message: "Subcategory is required" });
+    }
+    // Restaurant/entertainment still come from a map lookup or a location
+    // snapshot at creation time, so they always have coordinates; "general"
+    // is manual-entry only and has no reliable coordinate to attach.
+    if (data.category !== "general" && (data.latitude === undefined || data.longitude === undefined)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["latitude"], message: "Latitude/longitude are required" });
+    }
+  });
 
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);

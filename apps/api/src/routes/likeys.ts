@@ -3,9 +3,12 @@ import { z } from "zod";
 import { notifyMany } from "../lib/notifications.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
+import { SERVICE_SUBCATEGORIES } from "./businesses.js";
 
 const router = Router();
 router.use(requireAuth);
+
+const USER_SELECT = { id: true, username: true, profilePhotoUrl: true } as const;
 
 const createSchema = z.object({
   businessId: z.string().uuid(),
@@ -19,7 +22,7 @@ const TIER_RANK = { LIKED: 0, FINE: 1, DISLIKED: 2 } as const;
 
 const likeyFiltersSchema = z.object({
   q: z.string().optional(),
-  category: z.enum(["restaurant", "entertainment"]).optional(),
+  category: z.enum(["restaurant", "entertainment", "general"]).optional(),
   tier: z.enum(["LIKED", "FINE", "DISLIKED"]).optional(),
   sort: z.enum(["recent", "oldest", "tier", "business"]).optional().default("recent"),
 });
@@ -82,6 +85,61 @@ router.get("/user/:id", async (req, res) => {
 
   const likeys = await findLikeysForUser(targetId, parsed.data);
   res.json({ likeys });
+});
+
+const servicesFiltersSchema = z.object({
+  q: z.string().optional(),
+  subcategory: z.enum(SERVICE_SUBCATEGORIES).optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+});
+
+// General (service-provider) recommendations from people you follow —
+// search/browse only, never surfaced in the location-based feed (see the
+// product decision on keeping the "near me right now" feed restaurant/
+// entertainment-only).
+router.get("/services", async (req, res) => {
+  const parsed = servicesFiltersSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const { q, subcategory, city, state } = parsed.data;
+
+  const follows = await prisma.follow.findMany({
+    where: { followerId: req.userId, status: "APPROVED" },
+    select: { followeeId: true },
+  });
+  const followeeIds = follows.map((f) => f.followeeId);
+  if (followeeIds.length === 0) {
+    res.json({ likeys: [] });
+    return;
+  }
+
+  const likeys = await prisma.likey.findMany({
+    where: {
+      AND: [
+        { userId: { in: followeeIds } },
+        {
+          business: {
+            category: "general",
+            subcategory,
+            ...(city ? { city: { equals: city, mode: "insensitive" } } : {}),
+            ...(state ? { state: { equals: state, mode: "insensitive" } } : {}),
+          },
+        },
+        ...(q
+          ? [{ OR: [{ comment: { contains: q, mode: "insensitive" as const } }, { business: { name: { contains: q, mode: "insensitive" as const } } }] }]
+          : []),
+      ],
+    },
+    include: { business: true, user: { select: USER_SELECT } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json({
+    likeys: likeys.map(({ user, ...rest }) => ({ ...rest, author: user })),
+  });
 });
 
 // Single-post lookup, e.g. deep-linking from a "new Likey" notification.
