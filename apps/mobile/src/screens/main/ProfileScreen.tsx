@@ -5,15 +5,19 @@ import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { colors } from "../../theme/colors";
+import AboutScreen from "./AboutScreen";
 import SettingsScreen from "./SettingsScreen";
 
 export default function ProfileScreen() {
   const { user, logout, updateProfilePhoto } = useAuth();
-  const [showSettings, setShowSettings] = useState(false);
+  const [activeView, setActiveView] = useState<"none" | "settings" | "about">("none");
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
 
-  if (showSettings) {
-    return <SettingsScreen onBack={() => setShowSettings(false)} />;
+  if (activeView === "settings") {
+    return <SettingsScreen onBack={() => setActiveView("none")} />;
+  }
+  if (activeView === "about") {
+    return <AboutScreen onBack={() => setActiveView("none")} />;
   }
 
   const onChangePhoto = async () => {
@@ -81,7 +85,8 @@ export default function ProfileScreen() {
 
       <Text style={styles.title}>{user?.username}</Text>
       <Text style={styles.email}>{user?.email}</Text>
-      <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setShowSettings(true)} />
+      <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("settings")} />
+      <Button label="About melikey" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("about")} />
       <Button label="Log out" variant="dangerOutline" style={styles.actionButton} onPress={() => logout()} />
     </View>
   );
