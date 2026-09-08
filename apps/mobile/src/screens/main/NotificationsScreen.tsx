@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
   },
   rowUnread: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   rowText: { flex: 1, gap: 2 },
-  message: { fontSize: 14, color: colors.text },
-  time: { fontSize: 12, color: colors.textMuted },
+  message: { fontSize: 15, color: colors.text },
+  time: { fontSize: 13, color: colors.textMuted },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 24 },
 });

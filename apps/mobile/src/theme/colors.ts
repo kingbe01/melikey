@@ -9,7 +9,9 @@ export const colors = {
 
   border: "#DCE6F2",
   text: "#2C3E50",
-  textMuted: "#8698A8",
+  // #8698A8 measured at only ~2.9:1 contrast on white — well under WCAG AA's
+  // 4.5:1 minimum for normal text. This darker value holds ~5.5:1.
+  textMuted: "#5A6B7B",
 
   success: "#4CAF7D",
   warning: "#E0A458",

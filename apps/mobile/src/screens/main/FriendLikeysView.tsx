@@ -243,7 +243,7 @@ export default function FriendLikeysView({
                 <Text style={styles.expandButtonText}>{group.items.length} visits</Text>
                 <Ionicons
                   name={isExpanded ? "chevron-up" : "chevron-down"}
-                  size={16}
+                  size={18}
                   color={colors.primaryDark}
                 />
               </View>
@@ -319,12 +319,12 @@ const styles = StyleSheet.create({
   },
   entryContent: { gap: 6 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  businessName: { fontSize: 16, fontWeight: "600", flexShrink: 1, color: colors.text },
+  businessName: { fontSize: 17, fontWeight: "600", flexShrink: 1, color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
-  comment: { fontSize: 14, color: colors.text },
+  comment: { fontSize: 15, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
-  muted: { color: colors.textMuted, fontSize: 13 },
+  muted: { color: colors.textMuted, fontSize: 14 },
   error: { color: colors.danger, marginTop: 4 },
   empty: { color: colors.textMuted, paddingVertical: 8 },
 });

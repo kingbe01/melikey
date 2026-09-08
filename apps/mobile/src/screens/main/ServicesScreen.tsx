@@ -184,10 +184,10 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   authorRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   authorName: { fontSize: 13, fontWeight: "600", color: colors.text },
-  businessName: { fontSize: 16, fontWeight: "600", color: colors.text },
+  businessName: { fontSize: 17, fontWeight: "600", color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
-  comment: { fontSize: 14, color: colors.text },
+  comment: { fontSize: 15, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
-  muted: { color: colors.textMuted, fontSize: 13 },
+  muted: { color: colors.textMuted, fontSize: 14 },
 });

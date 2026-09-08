@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  rowText: { fontSize: 15, color: colors.text, flexShrink: 1 },
+  rowText: { fontSize: 16, color: colors.text, flexShrink: 1 },
   friendRowLeft: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
   actions: { flexDirection: "row", gap: 10 },
   error: { color: colors.danger, marginTop: 8 },

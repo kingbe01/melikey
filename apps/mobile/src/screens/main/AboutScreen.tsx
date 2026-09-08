@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  rowText: { fontSize: 15, color: colors.text },
+  rowText: { fontSize: 16, color: colors.text },
   version: { color: colors.textMuted, fontSize: 13, marginTop: 24, textAlign: "center" },
 });

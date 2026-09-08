@@ -130,5 +130,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   mapsButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
-  muted: { color: colors.textMuted, fontSize: 13 },
+  muted: { color: colors.textMuted, fontSize: 14 },
 });
