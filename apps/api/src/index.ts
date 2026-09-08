@@ -5,6 +5,7 @@ import { PRIVACY_POLICY_HTML, TERMS_OF_SERVICE_HTML } from "./lib/legalPages.js"
 import { prisma } from "./lib/prisma.js";
 import authRouter from "./routes/auth.js";
 import businessesRouter from "./routes/businesses.js";
+import exportRouter from "./routes/export.js";
 import feedRouter from "./routes/feed.js";
 import followsRouter from "./routes/follows.js";
 import likeysRouter from "./routes/likeys.js";
@@ -32,6 +33,7 @@ app.use("/businesses", businessesRouter);
 app.use("/likeys", likeysRouter);
 app.use("/feed", feedRouter);
 app.use("/notifications", notificationsRouter);
+app.use("/export", exportRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(port, () => {

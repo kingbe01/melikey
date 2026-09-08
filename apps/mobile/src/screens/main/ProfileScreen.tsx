@@ -6,11 +6,12 @@ import Button from "../../components/Button";
 import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
 import { colors } from "../../theme/colors";
 import AboutScreen from "./AboutScreen";
+import ExportScreen from "./ExportScreen";
 import SettingsScreen from "./SettingsScreen";
 
 export default function ProfileScreen() {
   const { user, logout, updateProfilePhoto } = useAuth();
-  const [activeView, setActiveView] = useState<"none" | "settings" | "about">("none");
+  const [activeView, setActiveView] = useState<"none" | "settings" | "about" | "export">("none");
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
 
   if (activeView === "settings") {
@@ -18,6 +19,9 @@ export default function ProfileScreen() {
   }
   if (activeView === "about") {
     return <AboutScreen onBack={() => setActiveView("none")} />;
+  }
+  if (activeView === "export") {
+    return <ExportScreen onBack={() => setActiveView("none")} />;
   }
 
   const onChangePhoto = async () => {
@@ -86,6 +90,7 @@ export default function ProfileScreen() {
       <Text style={styles.title}>{user?.username}</Text>
       <Text style={styles.email}>{user?.email}</Text>
       <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("settings")} />
+      <Button label="Export data" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("export")} />
       <Button label="About melikey" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("about")} />
       <Button label="Log out" variant="dangerOutline" style={styles.actionButton} onPress={() => logout()} />
     </View>

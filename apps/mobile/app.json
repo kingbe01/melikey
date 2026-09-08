@@ -9,7 +9,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bradking.melikey",
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "adaptiveIcon": {
@@ -43,7 +43,8 @@
           "cameraPermission": "Melikey needs access to your camera so you can take a photo for a Likey."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing"
     ],
     "extra": {
       "eas": {
