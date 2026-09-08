@@ -20,6 +20,7 @@ import Button from "../../components/Button";
 import { api, SERVICE_SUBCATEGORIES, type LikeyWithAuthor, type ServiceSubcategory } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
@@ -35,6 +36,7 @@ export default function ServicesScreen() {
   const [likeys, setLikeys] = useState<LikeyWithAuthor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { openImage, modal: imageViewerModal } = useImageViewer();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -66,6 +68,7 @@ export default function ServicesScreen() {
   }
 
   return (
+    <>
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.list}
@@ -168,11 +171,17 @@ export default function ServicesScreen() {
               </View>
             ) : null}
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-            {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
+            {item.photoUrl ? (
+              <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
+                <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+              </TouchableOpacity>
+            ) : null}
           </TouchableOpacity>
         );
       }}
     />
+    {imageViewerModal}
+    </>
   );
 }
 

@@ -17,12 +17,14 @@ import Avatar from "../../components/Avatar";
 import { type LikeyWithAuthor, api } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 
 export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string; onBack: () => void }) {
   const { token } = useAuth();
   const insets = useSafeAreaInsets();
+  const { openImage, modal: imageViewerModal } = useImageViewer();
   const [likey, setLikey] = useState<LikeyWithAuthor | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +51,7 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
   const location = likey ? formatLocation(likey.business.city, likey.business.state) : null;
 
   return (
+    <>
     <View style={styles.container}>
       <TouchableOpacity style={[styles.backRow, { paddingTop: insets.top + 8 }]} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
@@ -105,7 +108,11 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
           ) : null}
 
           {likey.comment ? <Text style={styles.comment}>{likey.comment}</Text> : null}
-          {likey.photoUrl ? <Image source={{ uri: likey.photoUrl }} style={styles.photo} /> : null}
+          {likey.photoUrl ? (
+            <TouchableOpacity onPress={() => openImage(likey.photoUrl!)}>
+              <Image source={{ uri: likey.photoUrl }} style={styles.photo} />
+            </TouchableOpacity>
+          ) : null}
 
           {hasCoordinates ? (
             <>
@@ -134,6 +141,8 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
         </ScrollView>
       )}
     </View>
+    {imageViewerModal}
+    </>
   );
 }
 

@@ -17,6 +17,7 @@ import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
+import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
@@ -46,6 +47,7 @@ export default function FriendLikeysView({
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
+  const { openImage, modal: imageViewerModal } = useImageViewer();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -109,16 +111,22 @@ export default function FriendLikeysView({
   };
 
   const renderEntry = (item: Likey) => (
-    <TouchableOpacity style={styles.entryContent} onPress={() => openPlaceDetail(item.business)}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
-        <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
-          <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+    <View style={styles.entryContent}>
+      <TouchableOpacity onPress={() => openPlaceDetail(item.business)}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
+          <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
+            <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
+          </View>
         </View>
-      </View>
-      {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-      {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
-    </TouchableOpacity>
+        {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
+      </TouchableOpacity>
+      {item.photoUrl ? (
+        <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
+          <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+        </TouchableOpacity>
+      ) : null}
+    </View>
   );
 
   if (viewingPlace) {
@@ -126,6 +134,7 @@ export default function FriendLikeysView({
   }
 
   return (
+    <>
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.list}
@@ -267,6 +276,8 @@ export default function FriendLikeysView({
         );
       }}
     />
+    {imageViewerModal}
+    </>
   );
 }
 
