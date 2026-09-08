@@ -79,6 +79,9 @@ function Tabs() {
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
+        // Without this the tab bar stays put and the keyboard covers it —
+        // there's no way to tell it's still there, let alone reach it.
+        tabBarHideOnKeyboard: true,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.text,

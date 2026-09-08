@@ -35,7 +35,12 @@ export default function SignupScreen({ navigation, route }: Props) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>Sign up</Text>
         <TextInput

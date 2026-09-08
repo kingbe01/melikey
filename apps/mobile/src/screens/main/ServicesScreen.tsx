@@ -60,6 +60,7 @@ export default function ServicesScreen() {
       data={likeys}
       keyExtractor={(item) => item.id}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       ListHeaderComponent={
         <View style={styles.header}>
           <Text style={styles.subtitle}>

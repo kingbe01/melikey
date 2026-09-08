@@ -127,6 +127,7 @@ export default function FriendLikeysView({
       data={groups}
       keyExtractor={(group) => group.business.id}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       ListHeaderComponent={
         <View style={styles.header}>
           <TouchableOpacity style={styles.backRow} onPress={onBack}>

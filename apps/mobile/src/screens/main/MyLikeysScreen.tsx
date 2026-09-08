@@ -234,6 +234,7 @@ export default function MyLikeysScreen() {
       data={groups}
       keyExtractor={(group) => group.business.id}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       ListHeaderComponent={
         <View style={styles.filters}>
           <TextInput

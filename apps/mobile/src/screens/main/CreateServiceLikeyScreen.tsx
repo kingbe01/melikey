@@ -79,7 +79,7 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.section}>Who do you recommend?</Text>
         <TextInput
           style={styles.input}

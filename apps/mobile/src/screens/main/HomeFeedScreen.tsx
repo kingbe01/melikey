@@ -138,6 +138,7 @@ export default function HomeFeedScreen() {
       data={visibleFeed}
       keyExtractor={(item) => item.id}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={isLoadingFeed} onRefresh={loadFeed} />}
       ListHeaderComponent={
         <View style={styles.searchSection}>
