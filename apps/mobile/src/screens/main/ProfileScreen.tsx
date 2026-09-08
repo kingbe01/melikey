@@ -1,34 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { usePhotoPicker } from "../../lib/usePhotoPicker";
+import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
-import AboutScreen from "./AboutScreen";
-import ExportScreen from "./ExportScreen";
-import MyLikeysScreen from "./MyLikeysScreen";
-import SettingsScreen from "./SettingsScreen";
 
 export default function ProfileScreen() {
-  const { user, logout, updateProfilePhoto } = useAuth();
-  const [activeView, setActiveView] = useState<"none" | "settings" | "about" | "export" | "mylikeys">("none");
+  const { user, updateProfilePhoto } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
-
-  if (activeView === "settings") {
-    return <SettingsScreen onBack={() => setActiveView("none")} />;
-  }
-  if (activeView === "about") {
-    return <AboutScreen onBack={() => setActiveView("none")} />;
-  }
-  if (activeView === "export") {
-    return <ExportScreen onBack={() => setActiveView("none")} />;
-  }
-  if (activeView === "mylikeys") {
-    return <MyLikeysScreen onBack={() => setActiveView("none")} />;
-  }
 
   const onChangePhoto = async () => {
     const base64 = await openPhotoPicker();
@@ -98,18 +84,13 @@ export default function ProfileScreen() {
         <Text style={styles.title}>{user?.username}</Text>
         <TouchableOpacity
           style={styles.editUsernameButton}
-          onPress={() => setActiveView("settings")}
+          onPress={() => navigation.navigate("Settings")}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="pencil" size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>
       <Text style={styles.email}>{user?.email}</Text>
-      <Button label="My Likeys" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("mylikeys")} />
-      <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("settings")} />
-      <Button label="Export data" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("export")} />
-      <Button label="About melikey" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("about")} />
-      <Button label="Log out" variant="dangerOutline" style={styles.actionButton} onPress={() => logout()} />
     </View>
     {photoPickerModal}
     </>
@@ -142,5 +123,4 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: "600", color: colors.text },
   email: { color: colors.textMuted },
-  actionButton: { marginTop: 12, width: "96%" },
 });

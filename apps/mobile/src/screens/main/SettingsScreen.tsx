@@ -50,7 +50,7 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
     <View style={styles.container}>
       <TouchableOpacity style={styles.backRow} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Me</Text>
+        <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Settings</Text>
 
