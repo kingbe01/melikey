@@ -114,5 +114,5 @@ const styles = StyleSheet.create({
   photoActionRow: { flexDirection: "row", gap: 8 },
   title: { fontSize: 20, fontWeight: "600", color: colors.text, marginTop: 12 },
   email: { color: colors.textMuted },
-  actionButton: { marginTop: 12, minWidth: 160 },
+  actionButton: { marginTop: 12, width: "96%" },
 });
