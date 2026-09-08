@@ -96,8 +96,8 @@ function Tabs() {
         headerRight: () => <NotificationBell />,
       })}
     >
-      <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
       <Tab.Screen name="Feed" component={HomeFeedScreen} options={{ title: "Places" }} />
+      <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
       <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post Likey" }} />
       <Tab.Screen name="MyLikeys" component={MyLikeysScreen} options={{ title: "My Likeys" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
