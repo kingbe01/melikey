@@ -15,7 +15,15 @@ import {
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
-import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
+import {
+  api,
+  SERVICE_SUBCATEGORIES,
+  type BusinessCategory,
+  type Likey,
+  type LikeyTier,
+  type MyLikeysSort,
+  type ServiceSubcategory,
+} from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
@@ -26,6 +34,12 @@ import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
 const COMMENT_MAX = 200;
+
+const PLACE_CATEGORIES: { value: BusinessCategory; label: string }[] = [
+  { value: "restaurant", label: "Restaurant" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "general", label: "General" },
+];
 
 export default function MyLikeysScreen() {
   const { token } = useAuth();
@@ -46,6 +60,17 @@ export default function MyLikeysScreen() {
   const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null);
   const [draftPhotoBase64, setDraftPhotoBase64] = useState<string | null | undefined>(undefined);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // A manually-entered place (no externalPlaceId) isn't shared with anyone
+  // else's posts, so it's safe to let the poster correct it here — an
+  // Apple-Maps-sourced place could belong to many other people's Likeys too.
+  const [isBusinessEditable, setIsBusinessEditable] = useState(false);
+  const [draftBusinessId, setDraftBusinessId] = useState<string | null>(null);
+  const [draftBusinessName, setDraftBusinessName] = useState("");
+  const [draftBusinessCategory, setDraftBusinessCategory] = useState<BusinessCategory | null>(null);
+  const [draftBusinessSubcategory, setDraftBusinessSubcategory] = useState<ServiceSubcategory | null>(null);
+  const [draftBusinessCity, setDraftBusinessCity] = useState("");
+  const [draftBusinessState, setDraftBusinessState] = useState("");
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -92,6 +117,13 @@ export default function MyLikeysScreen() {
     setDraftComment(item.comment ?? "");
     setDraftPhotoUrl(item.photoUrl);
     setDraftPhotoBase64(undefined);
+    setIsBusinessEditable(!item.business.externalPlaceId);
+    setDraftBusinessId(item.business.id);
+    setDraftBusinessName(item.business.name);
+    setDraftBusinessCategory(item.business.category);
+    setDraftBusinessSubcategory(item.business.subcategory);
+    setDraftBusinessCity(item.business.city ?? "");
+    setDraftBusinessState(item.business.state ?? "");
   };
 
   const cancelEdit = () => setEditingId(null);
@@ -111,15 +143,25 @@ export default function MyLikeysScreen() {
 
   const saveEdit = async () => {
     if (!token || !editingId || !draftTier) return;
+    if (isBusinessEditable && (!draftBusinessName.trim() || !draftBusinessCategory)) return;
     setIsSavingEdit(true);
     try {
-      const { likey } = await api.updateLikey(token, editingId, {
+      if (isBusinessEditable && draftBusinessId && draftBusinessCategory) {
+        await api.updateBusiness(token, draftBusinessId, {
+          name: draftBusinessName.trim(),
+          category: draftBusinessCategory,
+          subcategory: draftBusinessCategory === "general" ? (draftBusinessSubcategory ?? undefined) : undefined,
+          city: draftBusinessCity.trim() || undefined,
+          state: draftBusinessState.trim() || undefined,
+        });
+      }
+      await api.updateLikey(token, editingId, {
         tier: draftTier,
         comment: draftComment.trim() || null,
         ...(draftPhotoBase64 !== undefined ? { photoBase64: draftPhotoBase64 } : {}),
       });
-      setLikeys((prev) => prev.map((l) => (l.id === likey.id ? likey : l)));
       setEditingId(null);
+      load();
     } catch (e) {
       Alert.alert("Couldn't save changes", e instanceof Error ? e.message : "Try again.");
     } finally {
@@ -149,6 +191,54 @@ export default function MyLikeysScreen() {
   const renderEntry = (item: Likey) =>
     editingId === item.id ? (
       <View style={styles.entryContent}>
+        {isBusinessEditable ? (
+          <>
+            <Text style={styles.fieldLabel}>Place name</Text>
+            <TextInput style={styles.input} value={draftBusinessName} onChangeText={setDraftBusinessName} />
+            <Text style={styles.fieldLabel}>Category</Text>
+            <View style={styles.chipRow}>
+              {PLACE_CATEGORIES.map((c) => (
+                <TouchableOpacity
+                  key={c.value}
+                  style={[styles.chip, draftBusinessCategory === c.value && styles.chipSelected]}
+                  onPress={() => setDraftBusinessCategory(c.value)}
+                >
+                  <Text style={draftBusinessCategory === c.value && styles.chipTextSelected}>{c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {draftBusinessCategory === "general" ? (
+              <View style={styles.chipRow}>
+                {SERVICE_SUBCATEGORIES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
+                    onPress={() => setDraftBusinessSubcategory(s)}
+                  >
+                    <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
+            <View style={styles.optionRow}>
+              <TextInput
+                style={[styles.input, styles.cityInput]}
+                placeholder="City"
+                value={draftBusinessCity}
+                onChangeText={setDraftBusinessCity}
+              />
+              <TextInput
+                style={[styles.input, styles.stateInput]}
+                placeholder="State"
+                autoCapitalize="characters"
+                maxLength={2}
+                value={draftBusinessState}
+                onChangeText={setDraftBusinessState}
+              />
+            </View>
+            <Text style={styles.fieldLabel}>Your rating</Text>
+          </>
+        ) : null}
         <View style={styles.chipRow}>
           {(["LIKED", "FINE", "DISLIKED"] as LikeyTier[]).map((t) => (
             <TouchableOpacity
@@ -187,6 +277,7 @@ export default function MyLikeysScreen() {
           <Button
             label={isSavingEdit ? "Saving..." : "Save"}
             loading={isSavingEdit}
+            disabled={isBusinessEditable && (!draftBusinessName.trim() || !draftBusinessCategory)}
             onPress={saveEdit}
             style={styles.actionButton}
           />
@@ -356,6 +447,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   commentInput: { minHeight: 60, textAlignVertical: "top" },
+  fieldLabel: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  optionRow: { flexDirection: "row", gap: 8 },
+  cityInput: { flex: 2 },
+  stateInput: { flex: 1 },
   chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   chip: {
     borderWidth: 1,

@@ -356,6 +356,7 @@ export default function CreateLikeyScreen() {
             value={manualName}
             onChangeText={setManualName}
           />
+          <Text style={styles.searchByNameLabel}>What kind of place is it?</Text>
           <View style={styles.optionRow}>
             {CATEGORIES.map((c) => (
               <TouchableOpacity

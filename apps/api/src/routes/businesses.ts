@@ -140,4 +140,50 @@ router.post("/", async (req, res) => {
   res.status(201).json({ business });
 });
 
+const updateSchema = z
+  .object({
+    name: z.string().min(1).max(120).optional(),
+    category: z.enum(["restaurant", "entertainment", "general"]).optional(),
+    subcategory: z.enum(SERVICE_SUBCATEGORIES).optional(),
+    city: z.string().max(100).optional(),
+    state: z.string().max(100).optional(),
+    phone: z.string().max(30).nullable().optional(),
+    email: z.string().email().max(200).nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.category === "general" && !data.subcategory) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["subcategory"], message: "Subcategory is required" });
+    }
+  });
+
+// Editable only for manually-entered places (no externalPlaceId) — one shared
+// by an Apple Maps lookup could belong to many other people's posts too, so
+// letting one person edit it here would silently change what everyone else
+// sees. Also requires the requester to have actually posted about it.
+router.patch("/:id", async (req, res) => {
+  const parsed = updateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const business = await prisma.business.findUnique({ where: { id: req.params.id } });
+  if (!business) {
+    res.status(404).json({ error: "Place not found" });
+    return;
+  }
+  if (business.externalPlaceId) {
+    res.status(403).json({ error: "This place is shared and can't be edited here" });
+    return;
+  }
+  const ownsAPost = await prisma.likey.findFirst({ where: { businessId: business.id, userId: req.userId } });
+  if (!ownsAPost) {
+    res.status(403).json({ error: "You can only edit a place you've posted about" });
+    return;
+  }
+
+  const updated = await prisma.business.update({ where: { id: business.id }, data: parsed.data });
+  res.json({ business: updated });
+});
+
 export default router;

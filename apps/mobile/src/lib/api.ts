@@ -270,6 +270,27 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  // Only succeeds for a manually-entered place (no externalPlaceId) you've
+  // posted about — a place shared with other people's posts can't be edited.
+  updateBusiness: (
+    token: string,
+    id: string,
+    data: {
+      name?: string;
+      category?: BusinessCategory;
+      subcategory?: ServiceSubcategory;
+      city?: string;
+      state?: string;
+      phone?: string | null;
+      email?: string | null;
+    }
+  ) =>
+    request<{ business: Business }>(`/businesses/${id}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify(data),
+    }),
+
   createLikey: (
     token: string,
     data: { businessId: string; tier: LikeyTier; comment?: string; photoBase64?: string }
