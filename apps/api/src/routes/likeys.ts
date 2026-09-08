@@ -84,6 +84,32 @@ router.get("/user/:id", async (req, res) => {
   res.json({ likeys });
 });
 
+// Single-post lookup, e.g. deep-linking from a "new Likey" notification.
+// Same visibility rule as GET /user/:id: only the author or an approved follower can see it.
+router.get("/:id", async (req, res) => {
+  const likey = await prisma.likey.findUnique({
+    where: { id: req.params.id },
+    include: { business: true, user: { select: { id: true, username: true, profilePhotoUrl: true } } },
+  });
+  if (!likey) {
+    res.status(404).json({ error: "Likey not found" });
+    return;
+  }
+
+  if (likey.userId !== req.userId) {
+    const follow = await prisma.follow.findUnique({
+      where: { followerId_followeeId: { followerId: req.userId!, followeeId: likey.userId } },
+    });
+    if (!follow || follow.status !== "APPROVED") {
+      res.status(403).json({ error: "You must follow this user to see their Likeys" });
+      return;
+    }
+  }
+
+  const { user, ...rest } = likey;
+  res.json({ likey: { ...rest, author: user } });
+});
+
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {

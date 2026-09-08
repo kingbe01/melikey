@@ -1,10 +1,12 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { api, type AppNotification } from "../../lib/api";
+import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { useNotifications } from "../../notifications/NotificationsContext";
 import { colors } from "../../theme/colors";
 
@@ -33,6 +35,7 @@ function timeAgo(iso: string): string {
 
 export default function NotificationsScreen() {
   const { token } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { refresh: refreshUnreadCount, markAllRead } = useNotifications();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,14 +58,21 @@ export default function NotificationsScreen() {
   );
 
   const onPressItem = async (notification: AppNotification) => {
-    if (notification.readAt || !token) return;
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notification.id ? { ...n, readAt: new Date().toISOString() } : n))
-    );
-    try {
-      await api.markNotificationRead(token, notification.id);
-    } finally {
-      refreshUnreadCount();
+    if (!notification.readAt && token) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, readAt: new Date().toISOString() } : n))
+      );
+      try {
+        await api.markNotificationRead(token, notification.id);
+      } finally {
+        refreshUnreadCount();
+      }
+    }
+
+    if (notification.type === "FOLLOW_ACCEPTED" && notification.actor) {
+      navigation.navigate("FriendLikeys", { id: notification.actor.id, username: notification.actor.username });
+    } else if (notification.type === "NEW_LIKEY" && notification.data?.likeyId) {
+      navigation.navigate("LikeyDetail", { likeyId: notification.data.likeyId });
     }
   };
 

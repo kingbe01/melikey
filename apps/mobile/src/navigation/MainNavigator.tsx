@@ -1,13 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
-import { createNativeStackNavigator, type NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationProp,
+  type NativeStackScreenProps,
+} from "@react-navigation/native-stack";
 import type { ComponentProps } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNotifications } from "../notifications/NotificationsContext";
 import NotificationsScreen from "../screens/main/NotificationsScreen";
 import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
+import FriendLikeysView from "../screens/main/FriendLikeysView";
 import HomeFeedScreen from "../screens/main/HomeFeedScreen";
+import LikeyDetailScreen from "../screens/main/LikeyDetailScreen";
 import MyLikeysScreen from "../screens/main/MyLikeysScreen";
 import PeopleScreen from "../screens/main/PeopleScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
@@ -24,6 +30,8 @@ export type MainTabParamList = {
 export type MainStackParamList = {
   Tabs: undefined;
   Notifications: undefined;
+  FriendLikeys: { id: string; username: string };
+  LikeyDetail: { likeyId: string };
 };
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
@@ -90,11 +98,21 @@ function Tabs() {
   );
 }
 
+function FriendLikeysScreen({ route, navigation }: NativeStackScreenProps<MainStackParamList, "FriendLikeys">) {
+  return <FriendLikeysView user={route.params} onBack={() => navigation.goBack()} />;
+}
+
+function LikeyDetailStackScreen({ route, navigation }: NativeStackScreenProps<MainStackParamList, "LikeyDetail">) {
+  return <LikeyDetailScreen likeyId={route.params.likeyId} onBack={() => navigation.goBack()} />;
+}
+
 export default function MainNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
+      <Stack.Screen name="FriendLikeys" component={FriendLikeysScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="LikeyDetail" component={LikeyDetailStackScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

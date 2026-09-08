@@ -116,6 +116,10 @@ export interface Likey {
   business: Business;
 }
 
+export interface LikeyWithAuthor extends Likey {
+  author: { id: string; username: string; profilePhotoUrl: string | null };
+}
+
 export interface FeedItem {
   id: string;
   tier: LikeyTier;
@@ -273,6 +277,8 @@ export const api = {
 
   userLikeys: (token: string, userId: string, filters: LikeyFilters = {}) =>
     request<{ likeys: Likey[] }>(`/likeys/user/${userId}${buildLikeyFilterQuery(filters)}`, { token }),
+
+  likey: (token: string, id: string) => request<{ likey: LikeyWithAuthor }>(`/likeys/${id}`, { token }),
 
   myLikeys: (token: string, filters: LikeyFilters = {}) =>
     request<{ likeys: Likey[] }>(`/likeys/mine${buildLikeyFilterQuery(filters)}`, { token }),

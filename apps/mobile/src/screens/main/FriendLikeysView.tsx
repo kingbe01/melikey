@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import { api, type AuthUser, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
+import { api, type BusinessCategory, type Likey, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
@@ -20,7 +20,13 @@ import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
-export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onBack: () => void }) {
+export default function FriendLikeysView({
+  user,
+  onBack,
+}: {
+  user: { id: string; username: string };
+  onBack: () => void;
+}) {
   const { token } = useAuth();
 
   const [query, setQuery] = useState("");
@@ -225,19 +231,20 @@ export default function FriendLikeysView({ user, onBack }: { user: AuthUser; onB
                 <Text style={styles.businessName}>{group.business.name}</Text>
                 <Text style={styles.muted}>
                   {group.business.category}
-                  {location ? ` · ${location}` : ""} · {group.items.length} visits · last{" "}
-                  {formatRelativeTime(mostRecent.createdAt)}
+                  {location ? ` · ${location}` : ""} · last {formatRelativeTime(mostRecent.createdAt)}
                 </Text>
               </View>
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[mostRecent.tier] }]}>
                 <Text style={styles.tierBadgeText}>{TIER_LABELS[mostRecent.tier]}</Text>
               </View>
-              <Ionicons
-                name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={colors.textMuted}
-                style={styles.chevron}
-              />
+              <View style={styles.expandButton}>
+                <Text style={styles.expandButtonText}>{group.items.length} visits</Text>
+                <Ionicons
+                  name={isExpanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.primaryDark}
+                />
+              </View>
             </TouchableOpacity>
             {isExpanded
               ? group.items.map((item) => (
@@ -291,7 +298,17 @@ const styles = StyleSheet.create({
   },
   groupHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   groupHeaderText: { flex: 1, gap: 2 },
-  chevron: { marginLeft: 4 },
+  expandButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 4,
+  },
+  expandButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   historyEntry: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
