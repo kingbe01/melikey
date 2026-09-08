@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
@@ -87,7 +88,16 @@ export default function ProfileScreen() {
         ) : null}
       </View>
 
-      <Text style={styles.title}>{user?.username}</Text>
+      <View style={styles.usernameRow}>
+        <Text style={styles.title}>{user?.username}</Text>
+        <TouchableOpacity
+          style={styles.editUsernameButton}
+          onPress={() => setActiveView("settings")}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="pencil" size={16} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
       <Text style={styles.email}>{user?.email}</Text>
       <Button label="Settings" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("settings")} />
       <Button label="Export data" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("export")} />
@@ -112,7 +122,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   photoActionRow: { flexDirection: "row", gap: 8 },
-  title: { fontSize: 20, fontWeight: "600", color: colors.text, marginTop: 12 },
+  usernameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
+  editUsernameButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: { fontSize: 20, fontWeight: "600", color: colors.text },
   email: { color: colors.textMuted },
   actionButton: { marginTop: 12, width: "96%" },
 });
