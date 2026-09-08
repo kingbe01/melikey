@@ -98,8 +98,8 @@ function Tabs() {
     >
       <Tab.Screen name="Feed" component={HomeFeedScreen} options={{ title: "Places" }} />
       <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
-      <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post Likey" }} />
       <Tab.Screen name="Other" component={OtherScreen} options={{ title: "Other" }} />
+      <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post Likey" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Me" }} />
     </Tab.Navigator>
