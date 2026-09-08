@@ -183,7 +183,11 @@ router.get("/media", async (req, res) => {
     where: {
       AND: [
         { userId: { in: followeeIds } },
-        { mediaItem: { type } },
+        // mediaItemId must be checked explicitly — `{ mediaItem: { type: undefined } }`
+        // doesn't require the relation to exist, so business likeys leak through
+        // when no type filter is selected.
+        { mediaItemId: { not: null } },
+        ...(type ? [{ mediaItem: { type } }] : []),
         ...(q
           ? [
               {
