@@ -95,22 +95,21 @@ export default function FriendLikeysView({
     });
   };
 
+  const openPlaceDetail = (business: Likey["business"]) => {
+    setViewingPlace({
+      name: business.name,
+      category: business.category,
+      subcategory: business.subcategory,
+      address: business.address,
+      city: business.city,
+      state: business.state,
+      latitude: business.latitude,
+      longitude: business.longitude,
+    });
+  };
+
   const renderEntry = (item: Likey) => (
-    <TouchableOpacity
-      style={styles.entryContent}
-      onPress={() =>
-        setViewingPlace({
-          name: item.business.name,
-          category: item.business.category,
-          subcategory: item.business.subcategory,
-          address: item.business.address,
-          city: item.business.city,
-          state: item.business.state,
-          latitude: item.business.latitude,
-          longitude: item.business.longitude,
-        })
-      }
-    >
+    <TouchableOpacity style={styles.entryContent} onPress={() => openPlaceDetail(item.business)}>
       <View style={styles.cardHeader}>
         <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
         <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -221,11 +220,13 @@ export default function FriendLikeysView({
         if (group.items.length === 1) {
           return (
             <View style={styles.card}>
-              <Text style={styles.businessName}>{group.business.name}</Text>
-              <Text style={styles.muted}>
-                {group.business.category}
-                {location ? ` · ${location}` : ""}
-              </Text>
+              <TouchableOpacity onPress={() => openPlaceDetail(group.business)}>
+                <Text style={styles.businessName}>{group.business.name}</Text>
+                <Text style={styles.muted}>
+                  {group.business.category}
+                  {location ? ` · ${location}` : ""}
+                </Text>
+              </TouchableOpacity>
               {renderEntry(group.items[0])}
             </View>
           );
