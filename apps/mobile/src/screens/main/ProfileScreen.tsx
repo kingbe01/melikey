@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } fr
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
-import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
+import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { colors } from "../../theme/colors";
 import AboutScreen from "./AboutScreen";
 import ExportScreen from "./ExportScreen";
@@ -14,6 +14,7 @@ export default function ProfileScreen() {
   const { user, logout, updateProfilePhoto } = useAuth();
   const [activeView, setActiveView] = useState<"none" | "settings" | "about" | "export">("none");
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
+  const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
 
   if (activeView === "settings") {
     return <SettingsScreen onBack={() => setActiveView("none")} />;
@@ -26,7 +27,7 @@ export default function ProfileScreen() {
   }
 
   const onChangePhoto = async () => {
-    const base64 = await pickOrCapturePhoto();
+    const base64 = await openPhotoPicker();
     if (!base64) return;
     setIsUpdatingPhoto(true);
     try {
@@ -59,6 +60,7 @@ export default function ProfileScreen() {
   };
 
   return (
+    <>
     <View style={styles.container}>
       <TouchableOpacity style={styles.avatarWrapper} onPress={onChangePhoto} disabled={isUpdatingPhoto}>
         {isUpdatingPhoto ? (
@@ -104,6 +106,8 @@ export default function ProfileScreen() {
       <Button label="About melikey" variant="secondary" style={styles.actionButton} onPress={() => setActiveView("about")} />
       <Button label="Log out" variant="dangerOutline" style={styles.actionButton} onPress={() => logout()} />
     </View>
+    {photoPickerModal}
+    </>
   );
 }
 

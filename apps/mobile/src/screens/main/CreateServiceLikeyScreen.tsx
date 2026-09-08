@@ -14,7 +14,7 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import { api, SERVICE_SUBCATEGORIES, type LikeyTier, type ServiceSubcategory } from "../../lib/api";
-import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
+import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { colors } from "../../theme/colors";
 
 const TIERS: { value: LikeyTier; label: string }[] = [
@@ -43,8 +43,10 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
 
   const canSubmit = !isSubmitting && name.trim() !== "" && subcategory !== null && tier !== null;
 
+  const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
+
   const pickPhoto = async () => {
-    const base64 = await pickOrCapturePhoto();
+    const base64 = await openPhotoPicker();
     if (base64) setPhotoBase64(base64);
   };
 
@@ -78,6 +80,7 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
   };
 
   return (
+    <>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -200,6 +203,8 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
         />
       </ScrollView>
     </KeyboardAvoidingView>
+    {photoPickerModal}
+    </>
   );
 }
 

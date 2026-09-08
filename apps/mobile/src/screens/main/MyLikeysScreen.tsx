@@ -28,7 +28,8 @@ import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type BusinessGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
-import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
+import { useImageViewer } from "../../lib/useImageViewer";
+import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
@@ -53,6 +54,7 @@ export default function MyLikeysScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
+  const { openImage, modal: imageViewerModal } = useImageViewer();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTier, setDraftTier] = useState<LikeyTier | null>(null);
@@ -129,8 +131,10 @@ export default function MyLikeysScreen() {
 
   const cancelEdit = () => setEditingId(null);
 
+  const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
+
   const pickEditPhoto = async () => {
-    const base64 = await pickOrCapturePhoto();
+    const base64 = await openPhotoPicker();
     if (base64) {
       setDraftPhotoBase64(base64);
       setDraftPhotoUrl(`data:image/jpeg;base64,${base64}`);
@@ -316,8 +320,12 @@ export default function MyLikeysScreen() {
             </View>
           </View>
           {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-          {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
         </TouchableOpacity>
+        {item.photoUrl ? (
+          <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
+            <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.actionRow}>
           <Button label="Edit" onPress={() => startEdit(item)} style={styles.actionButton} />
           <Button label="Delete" variant="danger" onPress={() => onDelete(item)} style={styles.actionButton} />
@@ -330,6 +338,7 @@ export default function MyLikeysScreen() {
   }
 
   return (
+    <>
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.list}
@@ -443,6 +452,9 @@ export default function MyLikeysScreen() {
         );
       }}
     />
+    {photoPickerModal}
+    {imageViewerModal}
+    </>
   );
 }
 

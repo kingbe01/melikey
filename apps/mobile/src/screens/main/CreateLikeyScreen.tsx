@@ -24,7 +24,7 @@ import {
   type BusinessCategory,
   type LikeyTier,
 } from "../../lib/api";
-import { pickOrCapturePhoto } from "../../lib/pickOrCapturePhoto";
+import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
@@ -165,8 +165,10 @@ export default function CreateLikeyScreen() {
     setIsLocationExpanded(true);
   };
 
+  const { pickPhoto: openPhotoPicker, modal: photoPickerModal } = usePhotoPicker();
+
   const pickPhoto = async () => {
-    const base64 = await pickOrCapturePhoto();
+    const base64 = await openPhotoPicker();
     if (base64) setPhotoBase64(base64);
   };
 
@@ -261,6 +263,7 @@ export default function CreateLikeyScreen() {
   }
 
   return (
+    <>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -483,6 +486,8 @@ export default function CreateLikeyScreen() {
       />
       </ScrollView>
     </KeyboardAvoidingView>
+    {photoPickerModal}
+    </>
   );
 }
 
