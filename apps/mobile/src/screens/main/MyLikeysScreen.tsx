@@ -62,9 +62,10 @@ export default function MyLikeysScreen() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // A manually-entered place (no externalPlaceId) isn't shared with anyone
-  // else's posts, so it's safe to let the poster correct it here — an
-  // Apple-Maps-sourced place could belong to many other people's Likeys too.
-  const [isBusinessEditable, setIsBusinessEditable] = useState(false);
+  // else's posts, so its name/city/state are safe to correct here too — an
+  // Apple-Maps-sourced place could belong to many other people's Likeys, so
+  // only its category (a coarse, often-wrong guess) is editable there.
+  const [canEditFullPlace, setCanEditFullPlace] = useState(false);
   const [draftBusinessId, setDraftBusinessId] = useState<string | null>(null);
   const [draftBusinessName, setDraftBusinessName] = useState("");
   const [draftBusinessCategory, setDraftBusinessCategory] = useState<BusinessCategory | null>(null);
@@ -117,7 +118,7 @@ export default function MyLikeysScreen() {
     setDraftComment(item.comment ?? "");
     setDraftPhotoUrl(item.photoUrl);
     setDraftPhotoBase64(undefined);
-    setIsBusinessEditable(!item.business.externalPlaceId);
+    setCanEditFullPlace(!item.business.externalPlaceId);
     setDraftBusinessId(item.business.id);
     setDraftBusinessName(item.business.name);
     setDraftBusinessCategory(item.business.category);
@@ -143,16 +144,21 @@ export default function MyLikeysScreen() {
 
   const saveEdit = async () => {
     if (!token || !editingId || !draftTier) return;
-    if (isBusinessEditable && (!draftBusinessName.trim() || !draftBusinessCategory)) return;
+    if (canEditFullPlace && !draftBusinessName.trim()) return;
+    if (!draftBusinessCategory) return;
     setIsSavingEdit(true);
     try {
-      if (isBusinessEditable && draftBusinessId && draftBusinessCategory) {
+      if (draftBusinessId) {
         await api.updateBusiness(token, draftBusinessId, {
-          name: draftBusinessName.trim(),
           category: draftBusinessCategory,
           subcategory: draftBusinessCategory === "general" ? (draftBusinessSubcategory ?? undefined) : undefined,
-          city: draftBusinessCity.trim() || undefined,
-          state: draftBusinessState.trim() || undefined,
+          ...(canEditFullPlace
+            ? {
+                name: draftBusinessName.trim(),
+                city: draftBusinessCity.trim() || undefined,
+                state: draftBusinessState.trim() || undefined,
+              }
+            : {}),
         });
       }
       await api.updateLikey(token, editingId, {
@@ -188,57 +194,74 @@ export default function MyLikeysScreen() {
     ]);
   };
 
+  const openPlaceDetail = (business: Likey["business"]) => {
+    setViewingPlace({
+      name: business.name,
+      category: business.category,
+      subcategory: business.subcategory,
+      address: business.address,
+      city: business.city,
+      state: business.state,
+      latitude: business.latitude,
+      longitude: business.longitude,
+    });
+  };
+
   const renderEntry = (item: Likey) =>
     editingId === item.id ? (
       <View style={styles.entryContent}>
-        {isBusinessEditable ? (
+        {canEditFullPlace ? (
           <>
             <Text style={styles.fieldLabel}>Place name</Text>
             <TextInput style={styles.input} value={draftBusinessName} onChangeText={setDraftBusinessName} />
-            <Text style={styles.fieldLabel}>Category</Text>
-            <View style={styles.chipRow}>
-              {PLACE_CATEGORIES.map((c) => (
-                <TouchableOpacity
-                  key={c.value}
-                  style={[styles.chip, draftBusinessCategory === c.value && styles.chipSelected]}
-                  onPress={() => setDraftBusinessCategory(c.value)}
-                >
-                  <Text style={draftBusinessCategory === c.value && styles.chipTextSelected}>{c.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {draftBusinessCategory === "general" ? (
-              <View style={styles.chipRow}>
-                {SERVICE_SUBCATEGORIES.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
-                    onPress={() => setDraftBusinessSubcategory(s)}
-                  >
-                    <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : null}
-            <View style={styles.optionRow}>
-              <TextInput
-                style={[styles.input, styles.cityInput]}
-                placeholder="City"
-                value={draftBusinessCity}
-                onChangeText={setDraftBusinessCity}
-              />
-              <TextInput
-                style={[styles.input, styles.stateInput]}
-                placeholder="State"
-                autoCapitalize="characters"
-                maxLength={2}
-                value={draftBusinessState}
-                onChangeText={setDraftBusinessState}
-              />
-            </View>
-            <Text style={styles.fieldLabel}>Your rating</Text>
           </>
+        ) : (
+          <Text style={styles.fieldLabel}>{draftBusinessName} — category can be corrected, other details are shared</Text>
+        )}
+        <Text style={styles.fieldLabel}>Category</Text>
+        <View style={styles.chipRow}>
+          {(canEditFullPlace ? PLACE_CATEGORIES : PLACE_CATEGORIES.filter((c) => c.value !== "general")).map((c) => (
+            <TouchableOpacity
+              key={c.value}
+              style={[styles.chip, draftBusinessCategory === c.value && styles.chipSelected]}
+              onPress={() => setDraftBusinessCategory(c.value)}
+            >
+              <Text style={draftBusinessCategory === c.value && styles.chipTextSelected}>{c.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {canEditFullPlace && draftBusinessCategory === "general" ? (
+          <View style={styles.chipRow}>
+            {SERVICE_SUBCATEGORIES.map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
+                onPress={() => setDraftBusinessSubcategory(s)}
+              >
+                <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : null}
+        {canEditFullPlace ? (
+          <View style={styles.optionRow}>
+            <TextInput
+              style={[styles.input, styles.cityInput]}
+              placeholder="City"
+              value={draftBusinessCity}
+              onChangeText={setDraftBusinessCity}
+            />
+            <TextInput
+              style={[styles.input, styles.stateInput]}
+              placeholder="State"
+              autoCapitalize="characters"
+              maxLength={2}
+              value={draftBusinessState}
+              onChangeText={setDraftBusinessState}
+            />
+          </View>
+        ) : null}
+        <Text style={styles.fieldLabel}>Your rating</Text>
         <View style={styles.chipRow}>
           {(["LIKED", "FINE", "DISLIKED"] as LikeyTier[]).map((t) => (
             <TouchableOpacity
@@ -277,7 +300,7 @@ export default function MyLikeysScreen() {
           <Button
             label={isSavingEdit ? "Saving..." : "Save"}
             loading={isSavingEdit}
-            disabled={isBusinessEditable && (!draftBusinessName.trim() || !draftBusinessCategory)}
+            disabled={!draftBusinessCategory || (canEditFullPlace && !draftBusinessName.trim())}
             onPress={saveEdit}
             style={styles.actionButton}
           />
@@ -285,20 +308,7 @@ export default function MyLikeysScreen() {
       </View>
     ) : (
       <View style={styles.entryContent}>
-        <TouchableOpacity
-          onPress={() =>
-            setViewingPlace({
-              name: item.business.name,
-              category: item.business.category,
-              subcategory: item.business.subcategory,
-              address: item.business.address,
-              city: item.business.city,
-              state: item.business.state,
-              latitude: item.business.latitude,
-              longitude: item.business.longitude,
-            })
-          }
-        >
+        <TouchableOpacity onPress={() => openPlaceDetail(item.business)}>
           <View style={styles.cardHeader}>
             <Text style={styles.muted}>{formatRelativeTime(item.createdAt)}</Text>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
@@ -386,11 +396,13 @@ export default function MyLikeysScreen() {
         if (group.items.length === 1) {
           return (
             <View style={styles.card}>
-              <Text style={styles.businessName}>{group.business.name}</Text>
-              <Text style={styles.muted}>
-                {group.business.category}
-                {location ? ` · ${location}` : ""}
-              </Text>
+              <TouchableOpacity onPress={() => openPlaceDetail(group.business)}>
+                <Text style={styles.businessName}>{group.business.name}</Text>
+                <Text style={styles.muted}>
+                  {group.business.category}
+                  {location ? ` · ${location}` : ""}
+                </Text>
+              </TouchableOpacity>
               {renderEntry(group.items[0])}
             </View>
           );

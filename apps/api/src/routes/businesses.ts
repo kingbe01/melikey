@@ -156,10 +156,15 @@ const updateSchema = z
     }
   });
 
-// Editable only for manually-entered places (no externalPlaceId) — one shared
-// by an Apple Maps lookup could belong to many other people's posts too, so
-// letting one person edit it here would silently change what everyone else
-// sees. Also requires the requester to have actually posted about it.
+// A place shared via Apple Maps (externalPlaceId set) could belong to many
+// other people's posts, so name/city/state stay locked to avoid one person
+// silently changing what everyone else sees — but category/subcategory is
+// fair game even there: Apple's category heuristic is a coarse guess (see
+// appleMaps.ts's categorize()), and a wrong restaurant/entertainment call is
+// a genuine data error worth letting any poster correct for everyone. A
+// manually-entered place (no externalPlaceId) isn't shared, so it's fully
+// editable. Either way, requires the requester to have actually posted
+// about this place.
 router.patch("/:id", async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -172,17 +177,24 @@ router.patch("/:id", async (req, res) => {
     res.status(404).json({ error: "Place not found" });
     return;
   }
-  if (business.externalPlaceId) {
-    res.status(403).json({ error: "This place is shared and can't be edited here" });
+
+  const isShared = !!business.externalPlaceId;
+  const { name, city, state, phone, email, ...rest } = parsed.data;
+  if (isShared && (name !== undefined || city !== undefined || state !== undefined || phone !== undefined || email !== undefined)) {
+    res.status(403).json({ error: "This place is shared — only its category can be corrected here" });
     return;
   }
+
   const ownsAPost = await prisma.likey.findFirst({ where: { businessId: business.id, userId: req.userId } });
   if (!ownsAPost) {
     res.status(403).json({ error: "You can only edit a place you've posted about" });
     return;
   }
 
-  const updated = await prisma.business.update({ where: { id: business.id }, data: parsed.data });
+  const updated = await prisma.business.update({
+    where: { id: business.id },
+    data: isShared ? rest : parsed.data,
+  });
   res.json({ business: updated });
 });
 
