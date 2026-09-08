@@ -39,7 +39,6 @@ export default function NotificationsScreen() {
   const { refresh: refreshUnreadCount, markAllRead } = useNotifications();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingFollowId, setPendingFollowId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -80,24 +79,19 @@ export default function NotificationsScreen() {
   // A follow request notification can't link anywhere useful — you don't
   // follow them back yet, so you can't view their Likeys. Resolve it right
   // here instead, same as the Requests list on the People tab.
-  const onRespondToRequest = async (notification: AppNotification, action: "approve" | "deny") => {
+  //
+  // Removes the row immediately rather than waiting on the network — Render's
+  // free tier can take several seconds to wake from a cold start, which made
+  // the buttons look stuck. Either outcome (resolved here, or already handled
+  // elsewhere, e.g. the People tab) ends the same way from this screen's
+  // perspective: the row goes away.
+  const onRespondToRequest = (notification: AppNotification, action: "approve" | "deny") => {
     const followId = notification.data?.followId;
     if (!token || !followId) return;
-    setPendingFollowId(followId);
-    try {
-      if (action === "approve") {
-        await api.approveRequest(token, followId);
-      } else {
-        await api.denyRequest(token, followId);
-      }
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-      refreshUnreadCount();
-    } catch {
-      // Already handled elsewhere (e.g. from the People tab) — drop it either way.
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-    } finally {
-      setPendingFollowId(null);
-    }
+    setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+    refreshUnreadCount();
+    const request = action === "approve" ? api.approveRequest(token, followId) : api.denyRequest(token, followId);
+    request.catch(() => {});
   };
 
   const onMarkAllRead = async () => {
@@ -121,7 +115,6 @@ export default function NotificationsScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
             const followId = item.data?.followId;
-            const isPending = pendingFollowId === followId;
             return (
               <View style={[styles.row, !item.readAt && styles.rowUnread]}>
                 <TouchableOpacity style={styles.rowMain} onPress={() => onPressItem(item)}>
@@ -138,16 +131,12 @@ export default function NotificationsScreen() {
                       label="Deny"
                       variant="dangerOutline"
                       small
-                      loading={isPending}
-                      disabled={isPending}
                       style={styles.requestButton}
                       onPress={() => onRespondToRequest(item, "deny")}
                     />
                     <Button
                       label="Accept"
                       small
-                      loading={isPending}
-                      disabled={isPending}
                       style={styles.requestButton}
                       onPress={() => onRespondToRequest(item, "approve")}
                     />
