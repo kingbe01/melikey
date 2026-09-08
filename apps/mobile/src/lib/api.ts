@@ -361,6 +361,9 @@ export const api = {
   markAllNotificationsRead: (token: string) =>
     request<void>("/notifications/read-all", { method: "POST", token }),
 
+  deleteNotification: (token: string, id: string) =>
+    request<void>(`/notifications/${id}`, { method: "DELETE", token }),
+
   registerPushToken: (token: string, pushToken: string) =>
     request<void>("/notifications/push-tokens", {
       method: "POST",

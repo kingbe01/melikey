@@ -83,6 +83,13 @@ router.post("/requests/:id/approve", async (req, res) => {
     data: { status: "APPROVED" },
   });
 
+  // The incoming-request notification has served its purpose — without this
+  // it never goes away and reappears with live Accept/Deny buttons on every
+  // future fetch, since GET /notifications otherwise has no idea it was resolved.
+  await prisma.notification.deleteMany({
+    where: { type: "FOLLOW_REQUEST", data: { path: ["followId"], equals: follow.id } },
+  });
+
   const followee = await prisma.user.findUnique({ where: { id: follow.followeeId }, select: { username: true } });
   await notify({
     userId: follow.followerId,
@@ -103,6 +110,9 @@ router.post("/requests/:id/deny", async (req, res) => {
     return;
   }
   await prisma.follow.delete({ where: { id: follow.id } });
+  await prisma.notification.deleteMany({
+    where: { type: "FOLLOW_REQUEST", data: { path: ["followId"], equals: follow.id } },
+  });
   res.status(204).send();
 });
 

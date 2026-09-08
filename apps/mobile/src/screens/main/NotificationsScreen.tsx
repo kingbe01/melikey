@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useState } from "react";
@@ -94,6 +95,16 @@ export default function NotificationsScreen() {
     request.catch(() => {});
   };
 
+  // Independent of accept/deny — a way to clear any notification (including
+  // ones with no action attached, like a past accepted request) without
+  // needing to act on it.
+  const onDismiss = (notification: AppNotification) => {
+    if (!token) return;
+    setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+    refreshUnreadCount();
+    api.deleteNotification(token, notification.id).catch(() => {});
+  };
+
   const onMarkAllRead = async () => {
     await markAllRead();
     setNotifications((prev) => prev.map((n) => (n.readAt ? n : { ...n, readAt: new Date().toISOString() })));
@@ -117,6 +128,13 @@ export default function NotificationsScreen() {
             const followId = item.data?.followId;
             return (
               <View style={[styles.row, !item.readAt && styles.rowUnread]}>
+                <TouchableOpacity
+                  style={styles.dismissButton}
+                  onPress={() => onDismiss(item)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.rowMain} onPress={() => onPressItem(item)}>
                   <Avatar uri={item.actor?.profilePhotoUrl ?? null} size={36} />
                   <View style={styles.rowText}>
@@ -158,13 +176,16 @@ const styles = StyleSheet.create({
   loadingIndicator: { marginTop: 24 },
   list: { padding: 16, paddingBottom: 48, gap: 8 },
   row: {
+    position: "relative",
     padding: 12,
+    paddingRight: 32,
     borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
   rowUnread: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  dismissButton: { position: "absolute", top: 10, right: 10, zIndex: 1 },
   rowMain: { flexDirection: "row", alignItems: "center", gap: 12 },
   requestActions: { flexDirection: "row", justifyContent: "flex-end", gap: 8, marginTop: 10 },
   requestButton: { minWidth: 80 },
