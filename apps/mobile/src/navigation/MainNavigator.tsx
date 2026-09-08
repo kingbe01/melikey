@@ -8,6 +8,7 @@ import {
 } from "@react-navigation/native-stack";
 import type { ComponentProps } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotifications } from "../notifications/NotificationsContext";
 import NotificationsScreen from "../screens/main/NotificationsScreen";
 import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
@@ -106,7 +107,8 @@ function Tabs() {
 }
 
 function FriendLikeysScreen({ route, navigation }: NativeStackScreenProps<MainStackParamList, "FriendLikeys">) {
-  return <FriendLikeysView user={route.params} onBack={() => navigation.goBack()} />;
+  const insets = useSafeAreaInsets();
+  return <FriendLikeysView user={route.params} onBack={() => navigation.goBack()} topInset={insets.top} />;
 }
 
 function LikeyDetailStackScreen({ route, navigation }: NativeStackScreenProps<MainStackParamList, "LikeyDetail">) {

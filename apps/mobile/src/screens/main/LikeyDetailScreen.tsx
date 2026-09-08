@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import { type LikeyWithAuthor, api } from "../../lib/api";
@@ -21,6 +22,7 @@ import { colors } from "../../theme/colors";
 
 export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string; onBack: () => void }) {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [likey, setLikey] = useState<LikeyWithAuthor | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backRow} onPress={onBack}>
+      <TouchableOpacity style={[styles.backRow, { paddingTop: insets.top + 8 }]} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>

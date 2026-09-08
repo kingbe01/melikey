@@ -24,9 +24,14 @@ import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 export default function FriendLikeysView({
   user,
   onBack,
+  topInset = 0,
 }: {
   user: { id: string; username: string };
   onBack: () => void;
+  // Only needed when this is pushed with no native header above it (e.g.
+  // from a notification tap) — the People-tab embedded usage already sits
+  // below a native header that accounts for the safe area, so it stays 0.
+  topInset?: number;
 }) {
   const { token } = useAuth();
 
@@ -132,7 +137,7 @@ export default function FriendLikeysView({
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backRow} onPress={onBack}>
+          <TouchableOpacity style={[styles.backRow, topInset ? { paddingTop: topInset } : null]} onPress={onBack}>
             <Ionicons name="chevron-back" size={20} color={colors.primary} />
             <Text style={styles.backText}>People</Text>
           </TouchableOpacity>
