@@ -6,6 +6,7 @@ import {
   Alert,
   FlatList,
   Image,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -235,6 +236,7 @@ export default function MyLikeysScreen() {
       keyExtractor={(group) => group.business.id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.filters}>
           <TextInput

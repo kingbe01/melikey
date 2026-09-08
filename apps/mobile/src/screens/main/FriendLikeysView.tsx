@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -128,6 +129,7 @@ export default function FriendLikeysView({
       keyExtractor={(group) => group.business.id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.header}>
           <TouchableOpacity style={styles.backRow} onPress={onBack}>

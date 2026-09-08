@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -117,6 +118,7 @@ export default function PeopleScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      refreshControl={<RefreshControl refreshing={isLoadingConnections} onRefresh={loadConnections} />}
     >
       <Text style={styles.section}>Find people</Text>
       <View style={styles.searchRow}>
