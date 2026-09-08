@@ -1,6 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
@@ -70,6 +79,29 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
             {location ? ` · ${location}` : ""}
           </Text>
 
+          {likey.business.phone || likey.business.email ? (
+            <View style={styles.contactRow}>
+              {likey.business.phone ? (
+                <TouchableOpacity
+                  style={styles.contactButton}
+                  onPress={() => Linking.openURL(`tel:${likey.business.phone}`)}
+                >
+                  <Ionicons name="call-outline" size={15} color={colors.primaryDark} />
+                  <Text style={styles.contactButtonText}>{likey.business.phone}</Text>
+                </TouchableOpacity>
+              ) : null}
+              {likey.business.email ? (
+                <TouchableOpacity
+                  style={styles.contactButton}
+                  onPress={() => Linking.openURL(`mailto:${likey.business.email}`)}
+                >
+                  <Ionicons name="mail-outline" size={15} color={colors.primaryDark} />
+                  <Text style={styles.contactButtonText}>{likey.business.email}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
+
           {likey.comment ? <Text style={styles.comment}>{likey.comment}</Text> : null}
           {likey.photoUrl ? <Image source={{ uri: likey.photoUrl }} style={styles.photo} /> : null}
 
@@ -131,4 +163,7 @@ const styles = StyleSheet.create({
   },
   mapsButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
   muted: { color: colors.textMuted, fontSize: 14 },
+  contactRow: { flexDirection: "row", gap: 16, flexWrap: "wrap", marginTop: 4 },
+  contactButton: { flexDirection: "row", alignItems: "center", gap: 6 },
+  contactButtonText: { color: colors.primaryDark, fontSize: 14, fontWeight: "600" },
 });

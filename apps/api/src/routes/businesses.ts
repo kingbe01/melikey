@@ -99,6 +99,10 @@ const createSchema = z
     address: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     state: z.string().max(100).optional(),
+    // Free-text, not validated against a format — international phone
+    // numbers vary too much to usefully enforce a pattern here.
+    phone: z.string().max(30).optional(),
+    email: z.string().email().max(200).optional(),
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     externalPlaceId: z.string().optional(),

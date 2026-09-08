@@ -1,7 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Linking,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
@@ -61,6 +73,7 @@ export default function ServicesScreen() {
       keyExtractor={(item) => item.id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.header}>
           <Text style={styles.subtitle}>
@@ -132,6 +145,28 @@ export default function ServicesScreen() {
               {item.business.subcategory}
               {location ? ` · ${location}` : ""} · {formatRelativeTime(item.createdAt)}
             </Text>
+            {item.business.phone || item.business.email ? (
+              <View style={styles.contactRow}>
+                {item.business.phone ? (
+                  <TouchableOpacity
+                    style={styles.contactButton}
+                    onPress={() => Linking.openURL(`tel:${item.business.phone}`)}
+                  >
+                    <Ionicons name="call-outline" size={14} color={colors.primaryDark} />
+                    <Text style={styles.contactButtonText}>{item.business.phone}</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {item.business.email ? (
+                  <TouchableOpacity
+                    style={styles.contactButton}
+                    onPress={() => Linking.openURL(`mailto:${item.business.email}`)}
+                  >
+                    <Ionicons name="mail-outline" size={14} color={colors.primaryDark} />
+                    <Text style={styles.contactButtonText}>{item.business.email}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
             {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={styles.photo} /> : null}
           </TouchableOpacity>
@@ -190,4 +225,7 @@ const styles = StyleSheet.create({
   comment: { fontSize: 15, color: colors.text },
   photo: { width: "100%", height: 180, borderRadius: 8 },
   muted: { color: colors.textMuted, fontSize: 14 },
+  contactRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
+  contactButton: { flexDirection: "row", alignItems: "center", gap: 4 },
+  contactButtonText: { color: colors.primaryDark, fontSize: 13, fontWeight: "600" },
 });

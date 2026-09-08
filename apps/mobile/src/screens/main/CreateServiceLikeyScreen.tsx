@@ -32,6 +32,8 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
   const [subcategory, setSubcategory] = useState<ServiceSubcategory | null>(null);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [tier, setTier] = useState<LikeyTier | null>(null);
   const [comment, setComment] = useState("");
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
@@ -58,6 +60,8 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
         subcategory,
         city: city.trim() || undefined,
         state: state.trim() || undefined,
+        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
       });
       await api.createLikey(token, {
         businessId: business.id,
@@ -121,6 +125,26 @@ export default function CreateServiceLikeyScreen({ onDone }: { onDone: () => voi
             onChangeText={setState}
           />
         </View>
+
+        <Text style={styles.section}>Contact info (optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Phone number"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="phone-pad"
+          value={phone}
+          onChangeText={setPhone}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
 
         <Text style={styles.section}>How was it?</Text>
         <View style={styles.optionRow}>

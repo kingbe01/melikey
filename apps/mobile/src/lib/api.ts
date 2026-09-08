@@ -91,6 +91,8 @@ export interface Business {
   address: string | null;
   city: string | null;
   state: string | null;
+  phone: string | null;
+  email: string | null;
   // Null for "general" (service-provider) businesses — manually entered,
   // no map lookup, never used for GPS-radius surfacing.
   latitude: number | null;
@@ -255,6 +257,8 @@ export const api = {
       address?: string;
       city?: string;
       state?: string;
+      phone?: string;
+      email?: string;
       latitude?: number;
       longitude?: number;
       externalPlaceId?: string;

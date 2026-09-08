@@ -112,6 +112,10 @@ model Business {
   address         String?
   city            String?
   state           String?
+  // Contact info for a General (service-provider) recommendation — surfaced
+  // so a follower can actually reach out, not just read a rating.
+  phone           String?
+  email           String?
   // Nullable: "general" (service-provider) businesses are manually entered
   // with no Apple Maps lookup, so there's no coordinate to geocode — they're
   // surfaced by search, never by GPS radius, so this is fine to leave unset.
