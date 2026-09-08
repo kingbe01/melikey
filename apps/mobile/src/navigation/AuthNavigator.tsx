@@ -6,8 +6,8 @@ import SignupScreen from "../screens/auth/SignupScreen";
 
 export type AuthStackParamList = {
   Login: undefined;
-  Signup: undefined;
-  ForgotPassword: undefined;
+  Signup: { email?: string } | undefined;
+  ForgotPassword: { email?: string } | undefined;
   ResetPassword: { email: string };
 };
 

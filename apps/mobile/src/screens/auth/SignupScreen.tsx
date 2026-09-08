@@ -8,9 +8,9 @@ import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Signup">;
 
-export default function SignupScreen({ navigation }: Props) {
+export default function SignupScreen({ navigation, route }: Props) {
   const { signup } = useAuth();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(route.params?.email ?? "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

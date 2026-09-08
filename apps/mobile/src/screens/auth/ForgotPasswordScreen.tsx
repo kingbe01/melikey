@@ -8,8 +8,8 @@ import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 
-export default function ForgotPasswordScreen({ navigation }: Props) {
-  const [email, setEmail] = useState("");
+export default function ForgotPasswordScreen({ navigation, route }: Props) {
+  const [email, setEmail] = useState(route.params?.email ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

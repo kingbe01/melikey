@@ -63,8 +63,18 @@ export default function LoginScreen({ navigation }: Props) {
           style={styles.submitButton}
         />
         <View style={styles.linkRow}>
-          <Button label="Forgot password?" variant="secondary" small onPress={() => navigation.navigate("ForgotPassword")} />
-          <Button label="Need an account? Sign up" variant="secondary" small onPress={() => navigation.navigate("Signup")} />
+          <Button
+            label="Forgot password?"
+            variant="secondary"
+            small
+            onPress={() => navigation.navigate("ForgotPassword", email.trim() ? { email: email.trim() } : undefined)}
+          />
+          <Button
+            label="Need an account? Sign up"
+            variant="secondary"
+            small
+            onPress={() => navigation.navigate("Signup", email.trim() ? { email: email.trim() } : undefined)}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
