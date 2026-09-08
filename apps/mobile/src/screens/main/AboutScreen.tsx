@@ -1,17 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export default function AboutScreen({ onBack }: { onBack: () => void }) {
+  const insets = useSafeAreaInsets();
   const version = Constants.expoConfig?.version ?? "1.0.0";
   const buildNumber = Constants.expoConfig?.ios?.buildNumber;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backRow} onPress={onBack}>
+      <TouchableOpacity style={[styles.backRow, { marginTop: insets.top }]} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>

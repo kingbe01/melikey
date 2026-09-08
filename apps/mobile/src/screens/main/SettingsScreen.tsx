@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import { colors } from "../../theme/colors";
@@ -9,6 +10,7 @@ const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 export default function SettingsScreen({ onBack }: { onBack: () => void }) {
+  const insets = useSafeAreaInsets();
   const { user, updateUsername, updateDefaultRadiusMiles } = useAuth();
   const [isSaving, setIsSaving] = useState<number | null>(null);
 
@@ -48,7 +50,7 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backRow} onPress={onBack}>
+      <TouchableOpacity style={[styles.backRow, { marginTop: insets.top }]} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>

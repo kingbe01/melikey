@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import type { LikeyCategory } from "../../lib/api";
@@ -21,6 +22,7 @@ const CATEGORIES: { value: LikeyCategory; label: string }[] = [
 ];
 
 export default function ExportScreen({ onBack }: { onBack: () => void }) {
+  const insets = useSafeAreaInsets();
   const { token } = useAuth();
 
   const [scope, setScope] = useState<ExportScope>("mine");
@@ -56,7 +58,7 @@ export default function ExportScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backRow} onPress={onBack}>
+      <TouchableOpacity style={[styles.backRow, { marginTop: insets.top }]} onPress={onBack}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
