@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import { registerForPushNotificationsAsync } from "../lib/push";
+import { navigateForNotificationData } from "./notificationNavigation";
 
 interface NotificationsContextValue {
   unreadCount: number;
@@ -53,7 +54,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const receivedSub = Notifications.addNotificationReceivedListener(() => refresh());
-    const responseSub = Notifications.addNotificationResponseReceivedListener(() => refresh());
+    const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      refresh();
+      navigateForNotificationData(response.notification.request.content.data);
+    });
     return () => {
       receivedSub.remove();
       responseSub.remove();
