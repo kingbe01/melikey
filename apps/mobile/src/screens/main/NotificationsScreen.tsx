@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
@@ -50,7 +50,11 @@ export default function NotificationsScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+    // The unread badge is separate state in the header — a failed or missed
+    // refresh there (e.g. a Render cold-start timeout) can leave it stuck,
+    // so resync it here too rather than only after individual read actions.
+    refreshUnreadCount();
+  }, [token, refreshUnreadCount]);
 
   useFocusEffect(
     useCallback(() => {
@@ -117,13 +121,14 @@ export default function NotificationsScreen() {
       {hasUnread ? (
         <Button label="Mark all as read" variant="secondary" small style={styles.markAllButton} onPress={onMarkAllRead} />
       ) : null}
-      {isLoading ? (
+      {isLoading && notifications.length === 0 ? (
         <ActivityIndicator style={styles.loadingIndicator} color={colors.primary} />
       ) : (
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
           renderItem={({ item }) => {
             const followId = item.data?.followId;
             return (
