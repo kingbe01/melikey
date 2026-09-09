@@ -167,6 +167,7 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
     if (!token || !editingId || !draftTier) return;
     if (canEditFullPlace && !draftBusinessName.trim()) return;
     if (draftBusinessId && !draftBusinessCategory) return;
+    if (draftBusinessCategory === "general" && !draftBusinessSubcategory) return;
     setIsSavingEdit(true);
     try {
       if (draftBusinessId && draftBusinessCategory) {
@@ -254,17 +255,22 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
               ))}
             </View>
             {canEditFullPlace && draftBusinessCategory === "general" ? (
-              <View style={styles.chipRow}>
-                {SERVICE_SUBCATEGORIES.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
-                    onPress={() => setDraftBusinessSubcategory(s)}
-                  >
-                    <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <>
+                <View style={styles.chipRow}>
+                  {SERVICE_SUBCATEGORIES.map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={[styles.chip, draftBusinessSubcategory === s && styles.chipSelected]}
+                      onPress={() => setDraftBusinessSubcategory(s)}
+                    >
+                      <Text style={draftBusinessSubcategory === s && styles.chipTextSelected}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {!draftBusinessSubcategory ? (
+                  <Text style={styles.fieldError}>Pick a kind of service to save</Text>
+                ) : null}
+              </>
             ) : null}
             {canEditFullPlace ? (
               <View style={styles.optionRow}>
@@ -327,7 +333,11 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
           <Button
             label={isSavingEdit ? "Saving..." : "Save"}
             loading={isSavingEdit}
-            disabled={(draftBusinessId ? !draftBusinessCategory : false) || (canEditFullPlace && !draftBusinessName.trim())}
+            disabled={
+              (draftBusinessId ? !draftBusinessCategory : false) ||
+              (canEditFullPlace && !draftBusinessName.trim()) ||
+              (draftBusinessCategory === "general" && !draftBusinessSubcategory)
+            }
             onPress={saveEdit}
             style={styles.actionButton}
           />
@@ -511,6 +521,7 @@ const styles = StyleSheet.create({
   },
   commentInput: { minHeight: 60, textAlignVertical: "top" },
   fieldLabel: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  fieldError: { color: colors.danger, fontSize: 13, marginTop: 4 },
   optionRow: { flexDirection: "row", gap: 8 },
   cityInput: { flex: 2 },
   stateInput: { flex: 1 },
