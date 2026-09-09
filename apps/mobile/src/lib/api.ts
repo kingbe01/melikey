@@ -30,14 +30,23 @@ async function request<T>(
   options: RequestInit & { token?: string } = {}
 ): Promise<T> {
   const { token, headers, ...rest } = options;
-  const res = await fetch(`${API_URL}${path}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...rest,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+    });
+  } catch {
+    // fetch() itself throwing means the request never got a response at all
+    // (dropped connection, no signal, etc.) — surface something a user can
+    // act on instead of the raw native exception text (e.g. "UnexpectedException:
+    // The network connection was lost. (at ExpoModulesCore/Promise.swift:56)").
+    throw new ApiError("Couldn't connect. Check your internet connection and try again.", 0);
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);

@@ -20,9 +20,14 @@ export async function exportLikeys(
   const params = new URLSearchParams({ scope });
   if (categories.length > 0) params.set("categories", categories.join(","));
 
-  const res = await fetch(`${API_URL}/export/likeys?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/export/likeys?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error("Couldn't connect. Check your internet connection and try again.");
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
