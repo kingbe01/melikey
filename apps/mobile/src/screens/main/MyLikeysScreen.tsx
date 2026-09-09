@@ -6,6 +6,8 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -363,6 +365,11 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
 
   return (
     <>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.list}
@@ -481,6 +488,7 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
         );
       }}
     />
+    </KeyboardAvoidingView>
     {photoPickerModal}
     {imageViewerModal}
     </>
