@@ -48,6 +48,7 @@ export interface FeedItem {
   photoUrl: string | null;
   createdAt: Date;
   authorUsername: string;
+  authorProfilePhotoUrl: string | null;
   businessId: string;
   businessName: string;
   businessCategory: string;
@@ -72,13 +73,13 @@ export async function findFeed(
 
   return prisma.$queryRaw<FeedItem[]>`
     SELECT
-      id, tier, comment, "photoUrl", "createdAt", "authorUsername",
+      id, tier, comment, "photoUrl", "createdAt", "authorUsername", "authorProfilePhotoUrl",
       "businessId", "businessName", "businessCategory", "businessAddress",
       "businessCity", "businessState", latitude, longitude, "distanceMiles"
     FROM (
       SELECT
         l.id, l.tier, l.comment, l."photoUrl", l."createdAt",
-        u.username AS "authorUsername",
+        u.username AS "authorUsername", u."profilePhotoUrl" AS "authorProfilePhotoUrl",
         b.id AS "businessId", b.name AS "businessName", b.category AS "businessCategory",
         b.address AS "businessAddress", b.city AS "businessCity", b.state AS "businessState",
         b.latitude, b.longitude,
