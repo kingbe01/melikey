@@ -185,36 +185,39 @@ export default function PeopleScreen() {
         )}
       />
 
-      {suggestions.length > 0 ? (
-        <>
-          <Text style={styles.section}>Suggested for you</Text>
-          <FlatList
-            data={suggestions}
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="handled"
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <View style={styles.friendRowLeft}>
-                  <Avatar uri={item.profilePhotoUrl} size={36} />
-                  <View>
-                    <Text style={styles.rowText}>{item.username}</Text>
-                    <Text style={styles.mutualText}>
-                      {item.mutualCount} mutual {item.mutualCount === 1 ? "friend" : "friends"}
-                    </Text>
-                  </View>
-                </View>
-                <Button
-                  label="Follow"
-                  small
-                  loading={pendingId === item.id}
-                  onPress={() => onSendRequest(item.id)}
-                />
+      <Text style={styles.section}>Suggested for you</Text>
+      <FlatList
+        data={suggestions}
+        scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <View style={styles.friendRowLeft}>
+              <Avatar uri={item.profilePhotoUrl} size={36} />
+              <View>
+                <Text style={styles.rowText}>{item.username}</Text>
+                <Text style={styles.mutualText}>
+                  {item.mutualCount} mutual {item.mutualCount === 1 ? "friend" : "friends"}
+                </Text>
               </View>
-            )}
-          />
-        </>
-      ) : null}
+            </View>
+            <Button
+              label="Follow"
+              small
+              loading={pendingId === item.id}
+              onPress={() => onSendRequest(item.id)}
+            />
+          </View>
+        )}
+        ListEmptyComponent={
+          !isLoadingConnections ? (
+            <Text style={styles.empty}>
+              No suggestions yet — follow a few people and this fills in based on who they follow.
+            </Text>
+          ) : null
+        }
+      />
 
       <Text style={styles.section}>Requests to approve</Text>
       {isLoadingConnections ? <ActivityIndicator style={styles.loadingIndicator} /> : null}
