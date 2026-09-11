@@ -190,6 +190,10 @@ export interface OutgoingFollowRequest extends FollowRequest {
   followee: AuthUser;
 }
 
+export interface SuggestedUser extends AuthUser {
+  mutualCount: number;
+}
+
 export type NotificationType = "FOLLOW_REQUEST" | "FOLLOW_ACCEPTED" | "NEW_LIKEY";
 
 export interface NotificationActor {
@@ -357,6 +361,9 @@ export const api = {
     ),
 
   following: (token: string) => request<{ following: AuthUser[] }>("/follows/following", { token }),
+
+  friendSuggestions: (token: string) =>
+    request<{ suggestions: SuggestedUser[] }>("/follows/suggestions", { token }),
 
   followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
 

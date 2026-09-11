@@ -16,7 +16,7 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
-import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
+import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest, type SuggestedUser } from "../../lib/api";
 import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import FriendLikeysView from "./FriendLikeysView";
@@ -30,6 +30,7 @@ export default function PeopleScreen() {
   const [incoming, setIncoming] = useState<IncomingFollowRequest[]>([]);
   const [outgoing, setOutgoing] = useState<OutgoingFollowRequest[]>([]);
   const [following, setFollowing] = useState<AuthUser[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
@@ -50,14 +51,16 @@ export default function PeopleScreen() {
     if (!token) return;
     setIsLoadingConnections(true);
     try {
-      const [inRes, outRes, followingRes] = await Promise.all([
+      const [inRes, outRes, followingRes, suggestionsRes] = await Promise.all([
         api.incomingRequests(token),
         api.outgoingRequests(token),
         api.following(token),
+        api.friendSuggestions(token),
       ]);
       setIncoming(inRes.requests);
       setOutgoing(outRes.requests);
       setFollowing(followingRes.following);
+      setSuggestions(suggestionsRes.suggestions);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load requests");
     } finally {
@@ -92,6 +95,7 @@ export default function PeopleScreen() {
     try {
       await api.sendFollowRequest(token, followeeId);
       setResults((prev) => prev.filter((u) => u.id !== followeeId));
+      setSuggestions((prev) => prev.filter((u) => u.id !== followeeId));
       await loadConnections();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not send request");
@@ -167,6 +171,37 @@ export default function PeopleScreen() {
           </View>
         )}
       />
+
+      {suggestions.length > 0 ? (
+        <>
+          <Text style={styles.section}>Suggested for you</Text>
+          <FlatList
+            data={suggestions}
+            scrollEnabled={false}
+            keyboardShouldPersistTaps="handled"
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.row}>
+                <View style={styles.friendRowLeft}>
+                  <Avatar uri={item.profilePhotoUrl} size={36} />
+                  <View>
+                    <Text style={styles.rowText}>{item.username}</Text>
+                    <Text style={styles.mutualText}>
+                      {item.mutualCount} mutual {item.mutualCount === 1 ? "friend" : "friends"}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  label="Follow"
+                  small
+                  loading={pendingId === item.id}
+                  onPress={() => onSendRequest(item.id)}
+                />
+              </View>
+            )}
+          />
+        </>
+      ) : null}
 
       <Text style={styles.section}>Requests to approve</Text>
       {isLoadingConnections ? <ActivityIndicator style={styles.loadingIndicator} /> : null}
@@ -257,6 +292,7 @@ const styles = StyleSheet.create({
   },
   rowText: { fontSize: 16, color: colors.text, flexShrink: 1 },
   friendRowLeft: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
+  mutualText: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   actions: { flexDirection: "row", gap: 10 },
   error: { color: colors.danger, marginTop: 8 },
   empty: { color: colors.textMuted, paddingVertical: 8 },
