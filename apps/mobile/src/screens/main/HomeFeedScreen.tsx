@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -288,13 +289,13 @@ export default function HomeFeedScreen() {
               {formatRelativeTime(item.createdAt)}
             </Text>
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-            <Button
-              label="Copy to my Likeys"
-              variant="secondary"
-              small
+            <TouchableOpacity
               style={styles.copyButton}
               onPress={() => navigation.navigate("CopyLikey", { source: feedItemToLikey(item) })}
-            />
+            >
+              <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+              <Text style={styles.copyButtonText}>Copy Likey</Text>
+            </TouchableOpacity>
             {item.photoUrl ? (
               <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
                 <Image source={{ uri: item.photoUrl }} style={styles.photo} />
@@ -364,7 +365,18 @@ const styles = StyleSheet.create({
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
   comment: { fontSize: 15, color: colors.text },
-  copyButton: { alignSelf: "flex-start", marginTop: 4 },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-end",
+    backgroundColor: colors.primaryLight,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginTop: 4,
+  },
+  copyButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   photo: { width: "100%", height: 180, borderRadius: 8 },
   muted: { color: colors.textMuted, fontSize: 14 },
   error: { color: colors.danger },

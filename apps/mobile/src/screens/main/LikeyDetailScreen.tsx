@@ -16,7 +16,6 @@ import MapView, { Marker } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
-import Button from "../../components/Button";
 import { type LikeyWithAuthor, api } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
@@ -155,12 +154,10 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
           ) : null}
 
           {likey.author.id !== user?.id ? (
-            <Button
-              label="Copy to my Likeys"
-              variant="secondary"
-              style={styles.copyButton}
-              onPress={() => navigation.navigate("CopyLikey", { source: likey })}
-            />
+            <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: likey })}>
+              <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+              <Text style={styles.copyButtonText}>Copy Likey</Text>
+            </TouchableOpacity>
           ) : null}
         </ScrollView>
       )}
@@ -197,7 +194,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   mapsButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
-  copyButton: { marginTop: 16 },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-end",
+    backgroundColor: colors.primaryLight,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginTop: 16,
+  },
+  copyButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   muted: { color: colors.textMuted, fontSize: 14 },
   contactRow: { flexDirection: "row", gap: 16, flexWrap: "wrap", marginTop: 4 },
   contactButton: { flexDirection: "row", alignItems: "center", gap: 6 },

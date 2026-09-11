@@ -14,7 +14,6 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
-import Button from "../../components/Button";
 import { api, type Likey, type LikeyCategory, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
@@ -136,13 +135,10 @@ export default function FriendLikeysView({
           <Image source={{ uri: item.photoUrl }} style={styles.photo} />
         </TouchableOpacity>
       ) : null}
-      <Button
-        label="Copy to my Likeys"
-        variant="secondary"
-        small
-        style={styles.copyButton}
-        onPress={() => navigation.navigate("CopyLikey", { source: item })}
-      />
+      <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: item })}>
+        <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+        <Text style={styles.copyButtonText}>Copy Likey</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -353,7 +349,17 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   entryContent: { gap: 6 },
-  copyButton: { alignSelf: "flex-start" },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-end",
+    backgroundColor: colors.primaryLight,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  copyButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   businessName: { fontSize: 17, fontWeight: "600", flexShrink: 1, color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
