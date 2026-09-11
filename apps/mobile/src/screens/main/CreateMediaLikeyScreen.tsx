@@ -1,16 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Keyboard, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import { api, MEDIA_TYPES, type LikeyTier, type MediaType } from "../../lib/api";
@@ -76,12 +66,18 @@ export default function CreateMediaLikeyScreen({ onDone }: { onDone: () => void 
 
   return (
     <>
-    <KeyboardAvoidingView
+    <ScrollView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+      contentInsetAdjustmentBehavior="automatic"
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        <TouchableOpacity style={styles.backRow} onPress={onDone}>
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
         <Text style={styles.section}>What do you recommend?</Text>
         <TextInput
           style={styles.input}
@@ -174,8 +170,7 @@ export default function CreateMediaLikeyScreen({ onDone }: { onDone: () => void 
           loading={isSubmitting}
           style={styles.submitButton}
         />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </ScrollView>
     {photoPickerModal}
     </>
   );
@@ -184,6 +179,8 @@ export default function CreateMediaLikeyScreen({ onDone }: { onDone: () => void 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 8, paddingBottom: 48 },
+  backRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  backText: { color: colors.primary, fontWeight: "600" },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },
   input: {
     borderWidth: 1,

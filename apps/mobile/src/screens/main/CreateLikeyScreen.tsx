@@ -6,8 +6,6 @@ import {
   FlatList,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -264,17 +262,14 @@ export default function CreateLikeyScreen() {
 
   return (
     <>
-    <KeyboardAvoidingView
+    <ScrollView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+      contentInsetAdjustmentBehavior="automatic"
     >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
       <Text style={styles.section}>Where are you?</Text>
       <View style={styles.searchRow}>
         <TextInput
@@ -484,8 +479,7 @@ export default function CreateLikeyScreen() {
         loading={isSubmitting}
         style={styles.submitButton}
       />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </ScrollView>
     {photoPickerModal}
     </>
   );
@@ -493,7 +487,6 @@ export default function CreateLikeyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { flex: 1 },
   content: { padding: 16, gap: 8, paddingBottom: 48 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.background },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },

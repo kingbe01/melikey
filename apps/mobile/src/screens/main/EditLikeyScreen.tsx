@@ -1,17 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import {
@@ -63,6 +52,8 @@ export default function EditLikeyScreen({
   );
   const [draftBusinessCity, setDraftBusinessCity] = useState(item.business?.city ?? "");
   const [draftBusinessState, setDraftBusinessState] = useState(item.business?.state ?? "");
+  const [draftBusinessPhone, setDraftBusinessPhone] = useState(item.business?.phone ?? "");
+  const [draftBusinessEmail, setDraftBusinessEmail] = useState(item.business?.email ?? "");
 
   const [draftTier, setDraftTier] = useState<LikeyTier>(item.tier);
   const [draftComment, setDraftComment] = useState(item.comment ?? "");
@@ -104,6 +95,8 @@ export default function EditLikeyScreen({
                 name: draftBusinessName.trim(),
                 city: draftBusinessCity.trim() || undefined,
                 state: draftBusinessState.trim() || undefined,
+                phone: draftBusinessPhone.trim() || null,
+                email: draftBusinessEmail.trim() || null,
               }
             : {}),
         });
@@ -123,11 +116,7 @@ export default function EditLikeyScreen({
 
   return (
     <>
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
+    <View style={styles.container}>
       <TouchableOpacity style={styles.backRow} onPress={onCancel}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
@@ -137,6 +126,8 @@ export default function EditLikeyScreen({
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+        contentInsetAdjustmentBehavior="automatic"
       >
         {item.business ? (
           <>
@@ -181,22 +172,41 @@ export default function EditLikeyScreen({
               </>
             ) : null}
             {canEditFullPlace ? (
-              <View style={styles.optionRow}>
+              <>
+                <View style={styles.optionRow}>
+                  <TextInput
+                    style={[styles.input, styles.cityInput]}
+                    placeholder="City"
+                    value={draftBusinessCity}
+                    onChangeText={setDraftBusinessCity}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.stateInput]}
+                    placeholder="State"
+                    autoCapitalize="characters"
+                    maxLength={2}
+                    value={draftBusinessState}
+                    onChangeText={setDraftBusinessState}
+                  />
+                </View>
+                <Text style={styles.section}>Contact info (optional)</Text>
                 <TextInput
-                  style={[styles.input, styles.cityInput]}
-                  placeholder="City"
-                  value={draftBusinessCity}
-                  onChangeText={setDraftBusinessCity}
+                  style={styles.input}
+                  placeholder="Phone number"
+                  keyboardType="phone-pad"
+                  value={draftBusinessPhone}
+                  onChangeText={setDraftBusinessPhone}
                 />
                 <TextInput
-                  style={[styles.input, styles.stateInput]}
-                  placeholder="State"
-                  autoCapitalize="characters"
-                  maxLength={2}
-                  value={draftBusinessState}
-                  onChangeText={setDraftBusinessState}
+                  style={styles.input}
+                  placeholder="Email"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  value={draftBusinessEmail}
+                  onChangeText={setDraftBusinessEmail}
                 />
-              </View>
+              </>
             ) : null}
           </>
         ) : (
@@ -250,7 +260,7 @@ export default function EditLikeyScreen({
           />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
     {photoPickerModal}
     </>
   );
