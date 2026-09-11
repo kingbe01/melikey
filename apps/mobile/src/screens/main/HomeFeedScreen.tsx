@@ -25,6 +25,7 @@ import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
 import type { MainStackParamList, MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
+import CreateLikeyScreen from "./CreateLikeyScreen";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
 interface ManualLocation {
@@ -67,6 +68,7 @@ export default function HomeFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
+  const [isCreating, setIsCreating] = useState(false);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +88,7 @@ export default function HomeFeedScreen() {
   // sitting there from last time.
   useEffect(() => {
     const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setIsCreating(false);
       setLocationQuery("");
       setManualLocation(null);
       setGeocodeError(null);
@@ -179,6 +182,17 @@ export default function HomeFeedScreen() {
     return <PlaceDetailView place={viewingPlace} onBack={() => setViewingPlace(null)} />;
   }
 
+  if (isCreating) {
+    return (
+      <CreateLikeyScreen
+        onDone={() => {
+          setIsCreating(false);
+          loadFeed();
+        }}
+      />
+    );
+  }
+
   return (
     <>
     <FlatList
@@ -191,6 +205,7 @@ export default function HomeFeedScreen() {
       refreshControl={<RefreshControl refreshing={isLoadingFeed} onRefresh={loadFeed} />}
       ListHeaderComponent={
         <View style={styles.searchSection}>
+          <Button label="Recommend a place" style={styles.createButton} onPress={() => setIsCreating(true)} />
           <View style={styles.searchRow}>
             <TextInput
               style={[styles.input, styles.searchInput]}
@@ -315,6 +330,7 @@ const styles = StyleSheet.create({
   list: { padding: 16, gap: 12, flexGrow: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, padding: 24 },
   searchSection: { gap: 8, marginBottom: 4 },
+  createButton: { marginTop: 4 },
   searchRow: { flexDirection: "row", gap: 8 },
   input: {
     borderWidth: 1,

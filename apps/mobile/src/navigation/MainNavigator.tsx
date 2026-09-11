@@ -16,7 +16,6 @@ import type { Likey } from "../lib/api";
 import { useNotifications } from "../notifications/NotificationsContext";
 import AboutScreen from "../screens/main/AboutScreen";
 import CopyLikeyScreen from "../screens/main/CopyLikeyScreen";
-import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
 import ExportScreen from "../screens/main/ExportScreen";
 import FriendLikeysView from "../screens/main/FriendLikeysView";
 import HomeFeedScreen from "../screens/main/HomeFeedScreen";
@@ -34,7 +33,6 @@ export type MainTabParamList = {
   Feed: undefined;
   Services: undefined;
   Other: undefined;
-  CreateLikey: undefined;
   MyLikeys: undefined;
   People: undefined;
 };
@@ -60,7 +58,6 @@ const TAB_ICONS: Record<keyof MainTabParamList, { focused: IoniconName; unfocuse
   Feed: { focused: "location", unfocused: "location-outline" },
   Services: { focused: "construct", unfocused: "construct-outline" },
   Other: { focused: "book", unfocused: "book-outline" },
-  CreateLikey: { focused: "add-circle", unfocused: "add-circle-outline" },
   MyLikeys: { focused: "albums", unfocused: "albums-outline" },
   People: { focused: "people", unfocused: "people-outline" },
 };
@@ -177,7 +174,6 @@ function Tabs() {
       <Tab.Screen name="Feed" component={HomeFeedScreen} options={{ title: "Places" }} />
       <Tab.Screen name="Services" component={ServicesScreen} options={{ title: "Services" }} />
       <Tab.Screen name="Other" component={OtherScreen} options={{ title: "Other" }} />
-      <Tab.Screen name="CreateLikey" component={CreateLikeyScreen} options={{ title: "Post Likey" }} />
       <Tab.Screen name="MyLikeys" component={MyLikeysScreen} options={{ title: "My Likeys" }} />
       <Tab.Screen name="People" component={PeopleScreen} />
     </Tab.Navigator>

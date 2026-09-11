@@ -1,5 +1,4 @@
-import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,7 +23,6 @@ import {
 } from "../../lib/api";
 import { usePhotoPicker } from "../../lib/usePhotoPicker";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
-import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 
 const TIERS: { value: LikeyTier; label: string }[] = [
@@ -50,9 +48,8 @@ interface ManualLocation {
   lng: number;
 }
 
-export default function CreateLikeyScreen() {
+export default function CreateLikeyScreen({ onDone }: { onDone: () => void }) {
   const { token } = useAuth();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "CreateLikey">>();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [locationQuery, setLocationQuery] = useState("");
@@ -89,7 +86,6 @@ export default function CreateLikeyScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const loadNearby = useCallback(async () => {
     if (!token || !activeCoords) return;
@@ -170,9 +166,9 @@ export default function CreateLikeyScreen() {
     if (base64) setPhotoBase64(base64);
   };
 
-  // Full reset back to "select a place" — used by both Cancel and re-tapping
-  // the Post Likey tab, which previously left whatever place/tier/comment
-  // was already filled in sitting there instead of starting over.
+  // Resets back to "select a place" — used by the inline Cancel next to a
+  // confirmed place, to undo just the place selection without leaving the
+  // form entirely.
   const resetForm = useCallback(() => {
     setMode("select");
     setSelectedBusinessId(null);
@@ -188,13 +184,7 @@ export default function CreateLikeyScreen() {
     setComment("");
     setPhotoBase64(null);
     setSubmitError(null);
-    setSubmitSuccess(false);
   }, []);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", resetForm);
-    return unsubscribe;
-  }, [navigation, resetForm]);
 
   const canSubmit =
     !isSubmitting &&
@@ -242,8 +232,7 @@ export default function CreateLikeyScreen() {
         photoBase64: photoBase64 ?? undefined,
       });
 
-      resetForm();
-      setSubmitSuccess(true);
+      onDone();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Couldn't post this Likey");
     } finally {
@@ -270,6 +259,10 @@ export default function CreateLikeyScreen() {
       automaticallyAdjustKeyboardInsets
       contentInsetAdjustmentBehavior="automatic"
     >
+      <TouchableOpacity style={styles.backRow} onPress={onDone}>
+        <Ionicons name="chevron-back" size={20} color={colors.primary} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.section}>Where are you?</Text>
       <View style={styles.searchRow}>
         <TextInput
@@ -470,7 +463,6 @@ export default function CreateLikeyScreen() {
       )}
 
       {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
-      {submitSuccess ? <Text style={styles.success}>Likey posted!</Text> : null}
 
       <Button
         label={isSubmitting ? "Posting..." : "Post Likey"}
@@ -487,6 +479,8 @@ export default function CreateLikeyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  backRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  backText: { color: colors.primary, fontWeight: "600" },
   content: { padding: 16, gap: 8, paddingBottom: 48 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.background },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, color: colors.text },
@@ -544,5 +538,4 @@ const styles = StyleSheet.create({
   linkButton: { alignSelf: "flex-start", marginVertical: 8 },
   muted: { color: colors.textMuted },
   error: { color: colors.danger },
-  success: { color: colors.success },
 });
