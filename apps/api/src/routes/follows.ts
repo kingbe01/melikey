@@ -132,4 +132,60 @@ router.get("/followers", async (req, res) => {
   res.json({ followers: follows.map((f) => f.follower) });
 });
 
+const SUGGESTION_LIMIT = 20;
+
+// "People followed by people you follow" — pure second-degree-connection
+// suggestions from the existing follow graph, no new data collection. People
+// who already follow you (but you don't follow back) ARE eligible here —
+// only people you already follow, or already have a pending request to,
+// are excluded.
+router.get("/suggestions", async (req, res) => {
+  const userId = req.userId!;
+
+  const myOutgoing = await prisma.follow.findMany({
+    where: { followerId: userId },
+    select: { followeeId: true, status: true },
+  });
+  const excludeIds = new Set<string>([userId, ...myOutgoing.map((f) => f.followeeId)]);
+  const followeeIds = myOutgoing.filter((f) => f.status === "APPROVED").map((f) => f.followeeId);
+
+  if (followeeIds.length === 0) {
+    res.json({ suggestions: [] });
+    return;
+  }
+
+  const secondDegree = await prisma.follow.findMany({
+    where: { followerId: { in: followeeIds }, status: "APPROVED" },
+    select: { followeeId: true },
+  });
+
+  const mutualCounts = new Map<string, number>();
+  for (const f of secondDegree) {
+    if (excludeIds.has(f.followeeId)) continue;
+    mutualCounts.set(f.followeeId, (mutualCounts.get(f.followeeId) ?? 0) + 1);
+  }
+
+  const topIds = [...mutualCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, SUGGESTION_LIMIT)
+    .map(([id]) => id);
+
+  if (topIds.length === 0) {
+    res.json({ suggestions: [] });
+    return;
+  }
+
+  const users = await prisma.user.findMany({ where: { id: { in: topIds } }, select: USER_SELECT });
+  const usersById = new Map(users.map((u) => [u.id, u]));
+
+  const suggestions = topIds
+    .map((id) => {
+      const user = usersById.get(id);
+      return user ? { ...user, mutualCount: mutualCounts.get(id)! } : null;
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  res.json({ suggestions });
+});
+
 export default router;
