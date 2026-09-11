@@ -1,3 +1,4 @@
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
@@ -19,13 +20,14 @@ import { api, MEDIA_TYPES, type LikeyWithAuthor, type MediaType } from "../../li
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
-import type { MainStackParamList } from "../../navigation/MainNavigator";
+import type { MainStackParamList, MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import CreateMediaLikeyScreen from "./CreateMediaLikeyScreen";
 
 export default function OtherScreen() {
   const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "Other">>();
 
   const [isCreating, setIsCreating] = useState(false);
   const [query, setQuery] = useState("");
@@ -34,6 +36,17 @@ export default function OtherScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { openImage, modal: imageViewerModal } = useImageViewer();
+
+  // Leaving the tab and coming back shouldn't leave a half-typed search or
+  // an in-progress recommendation form sitting there.
+  useEffect(() => {
+    const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setIsCreating(false);
+      setQuery("");
+      setType(null);
+    });
+    return unsubscribe;
+  }, [tabNavigation]);
 
   const load = useCallback(async () => {
     if (!token) return;

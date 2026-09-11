@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,11 +17,13 @@ import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequest } from "../../lib/api";
+import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import FriendLikeysView from "./FriendLikeysView";
 
 export default function PeopleScreen() {
   const { token } = useAuth();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "People">>();
   const [viewingFriend, setViewingFriend] = useState<AuthUser | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AuthUser[]>([]);
@@ -31,6 +34,17 @@ export default function PeopleScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
+
+  // Leaving the tab and coming back shouldn't leave an old search sitting
+  // there from last time.
+  useEffect(() => {
+    const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setViewingFriend(null);
+      setQuery("");
+      setResults([]);
+    });
+    return unsubscribe;
+  }, [tabNavigation]);
 
   const loadConnections = useCallback(async () => {
     if (!token) return;

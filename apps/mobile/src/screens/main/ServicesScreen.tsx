@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
@@ -22,13 +23,14 @@ import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
-import type { MainStackParamList } from "../../navigation/MainNavigator";
+import type { MainStackParamList, MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import CreateServiceLikeyScreen from "./CreateServiceLikeyScreen";
 
 export default function ServicesScreen() {
   const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "Services">>();
 
   const [isCreating, setIsCreating] = useState(false);
   const [query, setQuery] = useState("");
@@ -37,6 +39,18 @@ export default function ServicesScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { openImage, modal: imageViewerModal } = useImageViewer();
+
+  // Leaving the tab and coming back shouldn't leave a half-typed search or
+  // an in-progress "Recommend a service" form sitting there — same reset
+  // CreateLikeyScreen already does for its own tab.
+  useEffect(() => {
+    const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setIsCreating(false);
+      setQuery("");
+      setSubcategory(null);
+    });
+    return unsubscribe;
+  }, [tabNavigation]);
 
   const load = useCallback(async () => {
     if (!token) return;

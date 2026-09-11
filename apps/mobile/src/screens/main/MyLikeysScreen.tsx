@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,12 +24,14 @@ import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOpti
 import { subjectLine, subjectName } from "../../lib/likeySubject";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
+import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import EditLikeyScreen from "./EditLikeyScreen";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
-export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
+export default function MyLikeysScreen() {
   const { token } = useAuth();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "MyLikeys">>();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<LikeyCategory | null>(null);
@@ -41,6 +44,18 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
   const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
   const [editingItem, setEditingItem] = useState<Likey | null>(null);
   const { openImage, modal: imageViewerModal } = useImageViewer();
+
+  // Leaving the tab and coming back shouldn't leave an old search/filter
+  // sitting there from last time.
+  useEffect(() => {
+    const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setQuery("");
+      setCategory(null);
+      setTier(null);
+      setSort("recent");
+    });
+    return unsubscribe;
+  }, [tabNavigation]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -165,12 +180,6 @@ export default function MyLikeysScreen({ onBack }: { onBack?: () => void }) {
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.filters}>
-          {onBack ? (
-            <TouchableOpacity style={styles.backRow} onPress={onBack}>
-              <Ionicons name="chevron-back" size={20} color={colors.primary} />
-              <Text style={styles.backText}>Me</Text>
-            </TouchableOpacity>
-          ) : null}
           <TextInput
             style={styles.input}
             placeholder="Search your Likeys"
@@ -282,8 +291,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, gap: 12, flexGrow: 1 },
   filters: { gap: 8, marginBottom: 8 },
-  backRow: { flexDirection: "row", alignItems: "center" },
-  backText: { color: colors.primary, fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

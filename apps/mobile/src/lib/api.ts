@@ -170,6 +170,7 @@ export interface FeedItem {
   photoUrl: string | null;
   createdAt: string;
   authorUsername: string;
+  authorProfilePhotoUrl: string | null;
   businessId: string;
   businessName: string;
   businessCategory: BusinessCategory;

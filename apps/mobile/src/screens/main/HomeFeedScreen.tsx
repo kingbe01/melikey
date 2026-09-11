@@ -1,5 +1,6 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
 import { api, type AuthUser, type FeedItem } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
@@ -19,6 +21,7 @@ import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
+import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
@@ -30,6 +33,7 @@ interface ManualLocation {
 
 export default function HomeFeedScreen() {
   const { token, user } = useAuth();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "Feed">>();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -46,6 +50,17 @@ export default function HomeFeedScreen() {
   const [following, setFollowing] = useState<AuthUser[]>([]);
   const [mutedUsernames, setMutedUsernames] = useState<Set<string>>(new Set());
   const [isFriendFilterOpen, setIsFriendFilterOpen] = useState(false);
+
+  // Leaving the tab and coming back shouldn't leave an old location search
+  // sitting there from last time.
+  useEffect(() => {
+    const unsubscribe = tabNavigation.addListener("tabPress", () => {
+      setLocationQuery("");
+      setManualLocation(null);
+      setGeocodeError(null);
+    });
+    return unsubscribe;
+  }, [tabNavigation]);
 
   // Memoized so this only produces a new reference when the underlying
   // location actually changes — an inline object literal here would get a
@@ -228,14 +243,18 @@ export default function HomeFeedScreen() {
             }
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.businessName}>{item.businessName}</Text>
+              <View style={styles.authorRow}>
+                <Avatar uri={item.authorProfilePhotoUrl} size={28} />
+                <Text style={styles.authorName}>@{item.authorUsername}</Text>
+              </View>
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[item.tier] }]}>
                 <Text style={styles.tierBadgeText}>{TIER_LABELS[item.tier]}</Text>
               </View>
             </View>
+            <Text style={styles.businessName}>{item.businessName}</Text>
             <Text style={styles.muted}>
               {item.businessCategory}
-              {location ? ` · ${location}` : ""} · {item.distanceMiles.toFixed(1)} mi · @{item.authorUsername} ·{" "}
+              {location ? ` · ${location}` : ""} · {item.distanceMiles.toFixed(1)} mi ·{" "}
               {formatRelativeTime(item.createdAt)}
             </Text>
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
@@ -302,6 +321,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  authorName: { fontSize: 13, fontWeight: "600", color: colors.text },
   businessName: { fontSize: 17, fontWeight: "600", flexShrink: 1, color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
