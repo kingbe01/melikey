@@ -20,11 +20,13 @@ import { api, type AuthUser, type IncomingFollowRequest, type OutgoingFollowRequ
 import type { MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import FriendLikeysView from "./FriendLikeysView";
+import QRConnectScreen from "./QRConnectScreen";
 
 export default function PeopleScreen() {
   const { token } = useAuth();
   const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "People">>();
   const [viewingFriend, setViewingFriend] = useState<AuthUser | null>(null);
+  const [isShowingQR, setIsShowingQR] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AuthUser[]>([]);
   const [incoming, setIncoming] = useState<IncomingFollowRequest[]>([]);
@@ -41,6 +43,7 @@ export default function PeopleScreen() {
   useEffect(() => {
     const unsubscribe = tabNavigation.addListener("tabPress", () => {
       setViewingFriend(null);
+      setIsShowingQR(false);
       setQuery("");
       setResults([]);
     });
@@ -130,6 +133,10 @@ export default function PeopleScreen() {
     return <FriendLikeysView user={viewingFriend} onBack={() => setViewingFriend(null)} />;
   }
 
+  if (isShowingQR) {
+    return <QRConnectScreen onBack={() => setIsShowingQR(false)} />;
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -139,6 +146,12 @@ export default function PeopleScreen() {
       refreshControl={<RefreshControl refreshing={isLoadingConnections} onRefresh={loadConnections} />}
     >
       <Text style={styles.section}>Find people</Text>
+      <Button
+        label="Connect via QR code"
+        variant="secondary"
+        style={styles.qrButton}
+        onPress={() => setIsShowingQR(true)}
+      />
       <View style={styles.searchRow}>
         <TextInput
           style={[styles.input, styles.searchInput]}
@@ -268,6 +281,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 48 },
   section: { fontSize: 16, fontWeight: "600", marginTop: 16, marginBottom: 8, color: colors.text },
   loadingIndicator: { marginBottom: 8 },
+  qrButton: { marginBottom: 8 },
   searchRow: { flexDirection: "row", gap: 8 },
   input: {
     borderWidth: 1,
