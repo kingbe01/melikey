@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/Button";
 import { api, type Likey, type LikeyCategory, type LikeyTier, type MyLikeysSort } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
@@ -20,6 +23,7 @@ import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOpti
 import { subjectLine } from "../../lib/likeySubject";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
+import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
@@ -36,6 +40,7 @@ export default function FriendLikeysView({
   topInset?: number;
 }) {
   const { token } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<LikeyCategory | null>(null);
@@ -131,6 +136,13 @@ export default function FriendLikeysView({
           <Image source={{ uri: item.photoUrl }} style={styles.photo} />
         </TouchableOpacity>
       ) : null}
+      <Button
+        label="Copy to my Likeys"
+        variant="secondary"
+        small
+        style={styles.copyButton}
+        onPress={() => navigation.navigate("CopyLikey", { source: item })}
+      />
     </View>
   );
 
@@ -341,6 +353,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   entryContent: { gap: 6 },
+  copyButton: { alignSelf: "flex-start" },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   businessName: { fontSize: 17, fontWeight: "600", flexShrink: 1, color: colors.text },
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },

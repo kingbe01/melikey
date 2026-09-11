@@ -17,7 +17,7 @@ import {
   MEDIA_TYPES,
   SERVICE_SUBCATEGORIES,
   type LikeyTier,
-  type LikeyWithAuthor,
+  type Likey,
   type MediaType,
   type ServiceSubcategory,
 } from "../../lib/api";
@@ -43,7 +43,7 @@ export default function CopyLikeyScreen({
   onDone,
   onCancel,
 }: {
-  source: LikeyWithAuthor;
+  source: Likey;
   onDone: () => void;
   onCancel: () => void;
 }) {

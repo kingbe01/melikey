@@ -12,7 +12,7 @@ import { Alert, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "r
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
 import Avatar from "../components/Avatar";
-import type { LikeyWithAuthor } from "../lib/api";
+import type { Likey } from "../lib/api";
 import { useNotifications } from "../notifications/NotificationsContext";
 import AboutScreen from "../screens/main/AboutScreen";
 import CopyLikeyScreen from "../screens/main/CopyLikeyScreen";
@@ -48,7 +48,10 @@ export type MainStackParamList = {
   About: undefined;
   FriendLikeys: { id: string; username: string };
   LikeyDetail: { likeyId: string };
-  CopyLikey: { source: LikeyWithAuthor };
+  // Only business/mediaItem/tier/comment are used — plain Likey (no author
+  // needed) so callers that don't have author info handy (the Places feed,
+  // a friend's Likeys list) can pass their own item straight through.
+  CopyLikey: { source: Likey };
 };
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];

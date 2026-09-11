@@ -1,5 +1,6 @@
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,13 +16,13 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
 import Button from "../../components/Button";
-import { api, type AuthUser, type FeedItem } from "../../lib/api";
+import { api, type AuthUser, type FeedItem, type Likey } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
-import type { MainTabParamList } from "../../navigation/MainNavigator";
+import type { MainStackParamList, MainTabParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 import PlaceDetailView, { type PlaceInfo } from "./PlaceDetailView";
 
@@ -31,9 +32,38 @@ interface ManualLocation {
   lng: number;
 }
 
+// The feed is a flattened, denormalized shape (no nested Business object) —
+// build the Likey shape CopyLikeyScreen expects. Feed items are always
+// restaurant/entertainment (General/media are excluded from the feed
+// entirely), so subcategory/phone/email are never populated here.
+function feedItemToLikey(item: FeedItem): Likey {
+  return {
+    id: item.id,
+    tier: item.tier,
+    comment: item.comment,
+    photoUrl: item.photoUrl,
+    createdAt: item.createdAt,
+    business: {
+      id: item.businessId,
+      name: item.businessName,
+      category: item.businessCategory,
+      subcategory: null,
+      address: item.businessAddress,
+      city: item.businessCity,
+      state: item.businessState,
+      phone: null,
+      email: null,
+      latitude: item.latitude,
+      longitude: item.longitude,
+    },
+    mediaItem: null,
+  };
+}
+
 export default function HomeFeedScreen() {
   const { token, user } = useAuth();
   const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "Feed">>();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { coords, error: locationError, isLoading: isLoadingLocation } = useCurrentLocation();
 
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -258,6 +288,13 @@ export default function HomeFeedScreen() {
               {formatRelativeTime(item.createdAt)}
             </Text>
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
+            <Button
+              label="Copy to my Likeys"
+              variant="secondary"
+              small
+              style={styles.copyButton}
+              onPress={() => navigation.navigate("CopyLikey", { source: feedItemToLikey(item) })}
+            />
             {item.photoUrl ? (
               <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
                 <Image source={{ uri: item.photoUrl }} style={styles.photo} />
@@ -327,6 +364,7 @@ const styles = StyleSheet.create({
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
   comment: { fontSize: 15, color: colors.text },
+  copyButton: { alignSelf: "flex-start", marginTop: 4 },
   photo: { width: "100%", height: 180, borderRadius: 8 },
   muted: { color: colors.textMuted, fontSize: 14 },
   error: { color: colors.danger },
