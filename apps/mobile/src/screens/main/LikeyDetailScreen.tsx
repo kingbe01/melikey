@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,15 +16,18 @@ import MapView, { Marker } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Avatar from "../../components/Avatar";
+import Button from "../../components/Button";
 import { type LikeyWithAuthor, api } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
+import type { MainStackParamList } from "../../navigation/MainNavigator";
 import { colors } from "../../theme/colors";
 
 export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string; onBack: () => void }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const insets = useSafeAreaInsets();
   const { openImage, modal: imageViewerModal } = useImageViewer();
   const [likey, setLikey] = useState<LikeyWithAuthor | null>(null);
@@ -148,6 +153,15 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
               </TouchableOpacity>
             </>
           ) : null}
+
+          {likey.author.id !== user?.id ? (
+            <Button
+              label="Copy to my Likeys"
+              variant="secondary"
+              style={styles.copyButton}
+              onPress={() => navigation.navigate("CopyLikey", { source: likey })}
+            />
+          ) : null}
         </ScrollView>
       )}
     </View>
@@ -183,6 +197,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   mapsButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
+  copyButton: { marginTop: 16 },
   muted: { color: colors.textMuted, fontSize: 14 },
   contactRow: { flexDirection: "row", gap: 16, flexWrap: "wrap", marginTop: 4 },
   contactButton: { flexDirection: "row", alignItems: "center", gap: 6 },

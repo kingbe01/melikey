@@ -12,8 +12,10 @@ import { Alert, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "r
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
 import Avatar from "../components/Avatar";
+import type { LikeyWithAuthor } from "../lib/api";
 import { useNotifications } from "../notifications/NotificationsContext";
 import AboutScreen from "../screens/main/AboutScreen";
+import CopyLikeyScreen from "../screens/main/CopyLikeyScreen";
 import CreateLikeyScreen from "../screens/main/CreateLikeyScreen";
 import ExportScreen from "../screens/main/ExportScreen";
 import FriendLikeysView from "../screens/main/FriendLikeysView";
@@ -46,6 +48,7 @@ export type MainStackParamList = {
   About: undefined;
   FriendLikeys: { id: string; username: string };
   LikeyDetail: { likeyId: string };
+  CopyLikey: { source: LikeyWithAuthor };
 };
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
@@ -187,6 +190,16 @@ function LikeyDetailStackScreen({ route, navigation }: NativeStackScreenProps<Ma
   return <LikeyDetailScreen likeyId={route.params.likeyId} onBack={() => navigation.goBack()} />;
 }
 
+function CopyLikeyStackScreen({ route, navigation }: NativeStackScreenProps<MainStackParamList, "CopyLikey">) {
+  return (
+    <CopyLikeyScreen
+      source={route.params.source}
+      onCancel={() => navigation.goBack()}
+      onDone={() => navigation.goBack()}
+    />
+  );
+}
+
 function SettingsStackScreen({ navigation }: NativeStackScreenProps<MainStackParamList, "Settings">) {
   return <SettingsScreen onBack={() => navigation.goBack()} />;
 }
@@ -210,6 +223,7 @@ export default function MainNavigator() {
       <Stack.Screen name="About" component={AboutStackScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FriendLikeys" component={FriendLikeysScreen} options={{ headerShown: false }} />
       <Stack.Screen name="LikeyDetail" component={LikeyDetailStackScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CopyLikey" component={CopyLikeyStackScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
