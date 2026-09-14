@@ -72,6 +72,28 @@ export const PRIVACY_POLICY_HTML = page(
 `
 );
 
+export const PRIVACY_CHOICES_HTML = page(
+  "Your Privacy Choices",
+  `
+<h1>Your Privacy Choices</h1>
+<p class="effective-date">Effective ${EFFECTIVE_DATE}</p>
+
+<p>melikey does not sell or share your personal information with third parties for cross-context behavioral advertising, and we do not use any third-party advertising or tracking SDKs. There is nothing to opt out of today.</p>
+
+<p>If this changes in the future, we'll update this page and provide a way to opt out here.</p>
+
+<h2>Your rights</h2>
+<p>Regardless of the above, you can always:</p>
+<ul>
+  <li>See and edit the data tied to your account from within the app.</li>
+  <li>Request a copy of your data or deletion of your account by contacting us below.</li>
+</ul>
+
+<h2>Contact</h2>
+<p>Questions about this page: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a></p>
+`
+);
+
 export const TERMS_OF_SERVICE_HTML = page(
   "Terms of Service",
   `
