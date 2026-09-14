@@ -94,6 +94,22 @@ export const PRIVACY_CHOICES_HTML = page(
 `
 );
 
+export const SUPPORT_HTML = page(
+  "Support",
+  `
+<h1>Support</h1>
+<p>Need help with melikey, found a bug, or have feedback? Email us and we'll get back to you:</p>
+<p><a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a></p>
+
+<h2>Common requests</h2>
+<ul>
+  <li><strong>Account deletion or a copy of your data:</strong> email the address above from the email associated with your account.</li>
+  <li><strong>Trouble logging in:</strong> use "Forgot password" on the login screen, or email us if you're still stuck.</li>
+  <li><strong>Report a bug or suggest a feature:</strong> email us with as much detail as you can (what you were doing, what you expected, what happened instead).</li>
+</ul>
+`
+);
+
 export const TERMS_OF_SERVICE_HTML = page(
   "Terms of Service",
   `

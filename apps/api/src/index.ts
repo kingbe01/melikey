@@ -1,7 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import { PRIVACY_CHOICES_HTML, PRIVACY_POLICY_HTML, TERMS_OF_SERVICE_HTML } from "./lib/legalPages.js";
+import { PRIVACY_CHOICES_HTML, PRIVACY_POLICY_HTML, SUPPORT_HTML, TERMS_OF_SERVICE_HTML } from "./lib/legalPages.js";
 import { prisma } from "./lib/prisma.js";
 import authRouter from "./routes/auth.js";
 import businessesRouter from "./routes/businesses.js";
@@ -27,6 +27,7 @@ app.get("/health", async (_req, res) => {
 app.get("/privacy", (_req, res) => res.type("html").send(PRIVACY_POLICY_HTML));
 app.get("/terms", (_req, res) => res.type("html").send(TERMS_OF_SERVICE_HTML));
 app.get("/privacy-choices", (_req, res) => res.type("html").send(PRIVACY_CHOICES_HTML));
+app.get("/support", (_req, res) => res.type("html").send(SUPPORT_HTML));
 
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
