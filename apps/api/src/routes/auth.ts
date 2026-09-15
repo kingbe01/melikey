@@ -213,4 +213,40 @@ router.patch("/me", requireAuth, async (req, res) => {
   res.json({ user });
 });
 
+const deleteMeSchema = z.object({ password: z.string().min(1) });
+
+// Requires re-entering the password as a confirmation step, same as
+// password-gated actions elsewhere — this is permanent and irreversible.
+// Notifications where this user was only the actor (not the owner) are
+// preserved with actorId cleared rather than deleted, matching the existing
+// nullable-actorId design (see schema.prisma's Notification model comment).
+router.delete("/me", requireAuth, async (req, res) => {
+  const parsed = deleteMeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const userId = req.userId!;
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+    res.status(401).json({ error: "Incorrect password" });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.notification.updateMany({ where: { actorId: userId }, data: { actorId: null } }),
+    prisma.notification.deleteMany({ where: { userId } }),
+    prisma.pushToken.deleteMany({ where: { userId } }),
+    prisma.passwordResetToken.deleteMany({ where: { userId } }),
+    prisma.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } }),
+    prisma.report.deleteMany({ where: { reporterId: userId } }),
+    prisma.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followeeId: userId }] } }),
+    prisma.likey.deleteMany({ where: { userId } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
+
+  res.status(204).send();
+});
+
 export default router;

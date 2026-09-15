@@ -239,6 +239,13 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  deleteAccount: (token: string, password: string) =>
+    request<void>("/auth/me", {
+      method: "DELETE",
+      token,
+      body: JSON.stringify({ password }),
+    }),
+
   forgotPassword: (email: string) =>
     request<{ message: string }>("/auth/forgot-password", {
       method: "POST",

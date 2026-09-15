@@ -15,6 +15,7 @@ interface AuthContextValue {
   updateDefaultRadiusMiles: (radiusMiles: number) => Promise<void>;
   updateProfilePhoto: (photoBase64: string | null) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -79,6 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(res.user);
       },
       logout: async () => {
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        setToken(null);
+        setUser(null);
+      },
+      deleteAccount: async (password) => {
+        if (!token) return;
+        await api.deleteAccount(token, password);
         await SecureStore.deleteItemAsync(TOKEN_KEY);
         setToken(null);
         setUser(null);

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
@@ -11,8 +11,12 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 export default function SettingsScreen({ onBack }: { onBack: () => void }) {
   const insets = useSafeAreaInsets();
-  const { user, updateUsername, updateDefaultRadiusMiles } = useAuth();
+  const { user, updateUsername, updateDefaultRadiusMiles, deleteAccount } = useAuth();
   const [isSaving, setIsSaving] = useState<number | null>(null);
+
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [username, setUsername] = useState(user?.username ?? "");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
@@ -36,6 +40,32 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const onDeleteAccount = () => {
+    if (!deletePassword) return;
+    Alert.alert(
+      "Delete your account?",
+      "This permanently deletes your account and everything you've posted. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeleteError(null);
+            setIsDeletingAccount(true);
+            try {
+              await deleteAccount(deletePassword);
+            } catch (e) {
+              setDeleteError(e instanceof Error ? e.message : "Couldn't delete account");
+            } finally {
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const onSelectRadius = async (radiusMiles: number) => {
     if (radiusMiles === user?.defaultRadiusMiles) return;
     setIsSaving(radiusMiles);
@@ -56,6 +86,7 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
       </TouchableOpacity>
       <Text style={styles.title}>Settings</Text>
 
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
       <Text style={styles.section}>Username</Text>
       <View style={styles.usernameRow}>
         <TextInput
@@ -95,12 +126,37 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
           );
         })}
       </View>
+
+      <Text style={[styles.section, styles.dangerSection]}>Delete account</Text>
+      <Text style={styles.subtitle}>
+        Permanently deletes your account and everything you've posted. This can't be undone.
+      </Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your password to confirm"
+        secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
+        value={deletePassword}
+        onChangeText={setDeletePassword}
+      />
+      {deleteError ? <Text style={styles.error}>{deleteError}</Text> : null}
+      <Button
+        label="Delete Account"
+        variant="danger"
+        loading={isDeletingAccount}
+        disabled={!deletePassword}
+        style={styles.deleteButton}
+        onPress={onDeleteAccount}
+      />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 16 },
+  scrollContent: { paddingBottom: 48 },
   backRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   backText: { color: colors.primary, fontWeight: "600" },
   title: { fontSize: 20, fontWeight: "600", color: colors.text, marginBottom: 16 },
@@ -130,4 +186,6 @@ const styles = StyleSheet.create({
   },
   chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   chipTextSelected: { color: colors.primaryDark, fontWeight: "600" },
+  dangerSection: { marginTop: 32 },
+  deleteButton: { marginTop: 4 },
 });
