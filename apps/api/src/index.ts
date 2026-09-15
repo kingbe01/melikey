@@ -11,6 +11,7 @@ import followsRouter from "./routes/follows.js";
 import likeysRouter from "./routes/likeys.js";
 import mediaItemsRouter from "./routes/mediaItems.js";
 import notificationsRouter from "./routes/notifications.js";
+import reportsRouter from "./routes/reports.js";
 import usersRouter from "./routes/users.js";
 
 const app = express();
@@ -38,6 +39,7 @@ app.use("/media-items", mediaItemsRouter);
 app.use("/feed", feedRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/export", exportRouter);
+app.use("/reports", reportsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(port, () => {

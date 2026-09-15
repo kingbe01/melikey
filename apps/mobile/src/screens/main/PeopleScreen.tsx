@@ -33,6 +33,7 @@ export default function PeopleScreen() {
   const [outgoing, setOutgoing] = useState<OutgoingFollowRequest[]>([]);
   const [following, setFollowing] = useState<AuthUser[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
+  const [blocked, setBlocked] = useState<AuthUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
@@ -54,16 +55,18 @@ export default function PeopleScreen() {
     if (!token) return;
     setIsLoadingConnections(true);
     try {
-      const [inRes, outRes, followingRes, suggestionsRes] = await Promise.all([
+      const [inRes, outRes, followingRes, suggestionsRes, blockedRes] = await Promise.all([
         api.incomingRequests(token),
         api.outgoingRequests(token),
         api.following(token),
         api.friendSuggestions(token),
+        api.blockedUsers(token),
       ]);
       setIncoming(inRes.requests);
       setOutgoing(outRes.requests);
       setFollowing(followingRes.following);
       setSuggestions(suggestionsRes.suggestions);
+      setBlocked(blockedRes.blocked);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load requests");
     } finally {
@@ -113,6 +116,19 @@ export default function PeopleScreen() {
     try {
       await api.approveRequest(token, id);
       await loadConnections();
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const onUnblock = async (id: string) => {
+    if (!token) return;
+    setPendingId(id);
+    try {
+      await api.unblockUser(token, id);
+      setBlocked((prev) => prev.filter((u) => u.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not unblock");
     } finally {
       setPendingId(null);
     }
@@ -275,6 +291,24 @@ export default function PeopleScreen() {
         )}
         ListEmptyComponent={!isLoadingConnections ? <Text style={styles.empty}>Not following anyone yet</Text> : null}
       />
+
+      {blocked.length > 0 ? (
+        <>
+          <Text style={styles.section}>Blocked</Text>
+          <FlatList
+            data={blocked}
+            scrollEnabled={false}
+            keyboardShouldPersistTaps="handled"
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.row}>
+                <Text style={styles.rowText}>{item.username}</Text>
+                <Button label="Unblock" small loading={pendingId === item.id} onPress={() => onUnblock(item.id)} />
+              </View>
+            )}
+          />
+        </>
+      ) : null}
     </ScrollView>
   );
 }

@@ -20,6 +20,7 @@ import Button from "../../components/Button";
 import { api, type AuthUser, type FeedItem, type Likey } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
@@ -304,13 +305,22 @@ export default function HomeFeedScreen() {
               {formatRelativeTime(item.createdAt)}
             </Text>
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={() => navigation.navigate("CopyLikey", { source: feedItemToLikey(item) })}
-            >
-              <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
-              <Text style={styles.copyButtonText}>Copy Likey</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() => token && promptReport(token, "LIKEY", item.id)}
+              >
+                <Ionicons name="flag-outline" size={12} color={colors.textMuted} />
+                <Text style={styles.reportButtonText}>Report</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={() => navigation.navigate("CopyLikey", { source: feedItemToLikey(item) })}
+              >
+                <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+                <Text style={styles.copyButtonText}>Copy Likey</Text>
+              </TouchableOpacity>
+            </View>
             {item.photoUrl ? (
               <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
                 <Image source={{ uri: item.photoUrl }} style={styles.photo} />
@@ -381,16 +391,24 @@ const styles = StyleSheet.create({
   tierBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   tierBadgeText: { color: colors.surface, fontSize: 12, fontWeight: "600" },
   comment: { fontSize: 15, color: colors.text },
+  actionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 4 },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    alignSelf: "flex-end",
     backgroundColor: colors.primaryLight,
     borderRadius: 16,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    marginTop: 4,
   },
   copyButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   photo: { width: "100%", height: 180, borderRadius: 8 },

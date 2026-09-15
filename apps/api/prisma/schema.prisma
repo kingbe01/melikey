@@ -24,6 +24,18 @@ enum NotificationType {
   NEW_LIKEY
 }
 
+enum ReportTargetType {
+  LIKEY
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  OTHER
+}
+
 model User {
   id                 String   @id @default(uuid())
   email              String   @unique
@@ -39,6 +51,40 @@ model User {
   passwordResetTokens PasswordResetToken[]
   notifications       Notification[]      @relation("NotificationsReceived")
   pushTokens          PushToken[]
+  blocksMade          Block[]             @relation("BlocksMade")
+  blocksReceived      Block[]             @relation("BlocksReceived")
+  reports             Report[]
+}
+
+// One-directional: blocker no longer sees blocked's content, and follows
+// between the two (either direction) are severed and can't be re-created.
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlocksMade", fields: [blockerId], references: [id])
+  blocked User @relation("BlocksReceived", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
+
+// A user flagging a Likey or another user for review. No in-app moderation
+// queue at this stage — filing one emails support so it can be acted on
+// directly (delete the Likey, reach out to/remove the user).
+model Report {
+  id         String           @id @default(uuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reason     ReportReason
+  note       String?
+  createdAt  DateTime         @default(now())
+
+  reporter User @relation(fields: [reporterId], references: [id])
+
+  @@index([targetType, targetId])
 }
 
 // A device's Expo push token. A user can have several (multiple devices, or

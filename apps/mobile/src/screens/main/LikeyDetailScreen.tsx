@@ -19,6 +19,7 @@ import Avatar from "../../components/Avatar";
 import { type LikeyWithAuthor, api } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
@@ -154,10 +155,19 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
           ) : null}
 
           {likey.author.id !== user?.id ? (
-            <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: likey })}>
-              <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
-              <Text style={styles.copyButtonText}>Copy Likey</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() => token && promptReport(token, "LIKEY", likey.id)}
+              >
+                <Ionicons name="flag-outline" size={12} color={colors.textMuted} />
+                <Text style={styles.reportButtonText}>Report</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: likey })}>
+                <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+                <Text style={styles.copyButtonText}>Copy Likey</Text>
+              </TouchableOpacity>
+            </View>
           ) : null}
         </ScrollView>
       )}
@@ -194,16 +204,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   mapsButtonText: { color: colors.surface, fontWeight: "600", fontSize: 15 },
+  actionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 16 },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    alignSelf: "flex-end",
     backgroundColor: colors.primaryLight,
     borderRadius: 16,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    marginTop: 16,
   },
   copyButtonText: { color: colors.primaryDark, fontSize: 12, fontWeight: "600" },
   muted: { color: colors.textMuted, fontSize: 14 },

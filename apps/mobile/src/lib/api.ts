@@ -194,6 +194,9 @@ export interface SuggestedUser extends AuthUser {
   mutualCount: number;
 }
 
+export type ReportTargetType = "LIKEY" | "USER";
+export type ReportReason = "SPAM" | "HARASSMENT" | "INAPPROPRIATE" | "OTHER";
+
 export type NotificationType = "FOLLOW_REQUEST" | "FOLLOW_ACCEPTED" | "NEW_LIKEY";
 
 export interface NotificationActor {
@@ -366,6 +369,24 @@ export const api = {
     request<{ suggestions: SuggestedUser[] }>("/follows/suggestions", { token }),
 
   followers: (token: string) => request<{ followers: AuthUser[] }>("/follows/followers", { token }),
+
+  blockedUsers: (token: string) => request<{ blocked: AuthUser[] }>("/users/blocked", { token }),
+
+  blockUser: (token: string, userId: string) =>
+    request(`/users/${userId}/block`, { method: "POST", token }),
+
+  unblockUser: (token: string, userId: string) =>
+    request(`/users/${userId}/block`, { method: "DELETE", token }),
+
+  report: (
+    token: string,
+    data: { targetType: ReportTargetType; targetId: string; reason: ReportReason; note?: string }
+  ) =>
+    request("/reports", {
+      method: "POST",
+      token,
+      body: JSON.stringify(data),
+    }),
 
   userLikeys: (token: string, userId: string, filters: LikeyFilters = {}) =>
     request<{ likeys: Likey[] }>(`/likeys/user/${userId}${buildLikeyFilterQuery(filters)}`, { token }),

@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   RefreshControl,
@@ -20,6 +21,7 @@ import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type LikeyGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
 import { subjectLine } from "../../lib/likeySubject";
+import { promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
@@ -53,6 +55,27 @@ export default function FriendLikeysView({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewingPlace, setViewingPlace] = useState<PlaceInfo | null>(null);
   const { openImage, modal: imageViewerModal } = useImageViewer();
+
+  const confirmBlock = () => {
+    Alert.alert(
+      `Block @${user.username}?`,
+      "They won't be able to follow you, and you won't see their Likeys anymore.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: () => {
+            if (!token) return;
+            api
+              .blockUser(token, user.id)
+              .then(onBack)
+              .catch((e) => Alert.alert("Couldn't block", e instanceof Error ? e.message : "Try again later"));
+          },
+        },
+      ]
+    );
+  };
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -135,10 +158,19 @@ export default function FriendLikeysView({
           <Image source={{ uri: item.photoUrl }} style={styles.photo} />
         </TouchableOpacity>
       ) : null}
-      <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: item })}>
-        <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
-        <Text style={styles.copyButtonText}>Copy Likey</Text>
-      </TouchableOpacity>
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => token && promptReport(token, "LIKEY", item.id)}
+        >
+          <Ionicons name="flag-outline" size={12} color={colors.textMuted} />
+          <Text style={styles.reportButtonText}>Report</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: item })}>
+          <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
+          <Text style={styles.copyButtonText}>Copy Likey</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -158,10 +190,16 @@ export default function FriendLikeysView({
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
       ListHeaderComponent={
         <View style={styles.header}>
-          <TouchableOpacity style={[styles.backRow, topInset ? { paddingTop: topInset } : null]} onPress={onBack}>
-            <Ionicons name="chevron-back" size={20} color={colors.primary} />
-            <Text style={styles.backText}>People</Text>
-          </TouchableOpacity>
+          <View style={[styles.topRow, topInset ? { paddingTop: topInset } : null]}>
+            <TouchableOpacity style={styles.backRow} onPress={onBack}>
+              <Ionicons name="chevron-back" size={20} color={colors.primary} />
+              <Text style={styles.backText}>People</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.blockRow} onPress={confirmBlock}>
+              <Ionicons name="ban-outline" size={14} color={colors.danger} />
+              <Text style={styles.blockText}>Block</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.title}>@{user.username}'s Likeys</Text>
 
           <TextInput
@@ -297,8 +335,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, paddingBottom: 32 },
   header: { gap: 8, marginBottom: 4 },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   backRow: { flexDirection: "row", alignItems: "center" },
   backText: { color: colors.primary, fontWeight: "600" },
+  blockRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  blockText: { color: colors.danger, fontWeight: "600", fontSize: 13 },
   title: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 4 },
   input: {
     borderWidth: 1,
@@ -349,11 +390,20 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   entryContent: { gap: 6 },
+  actionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8 },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    alignSelf: "flex-end",
     backgroundColor: colors.primaryLight,
     borderRadius: 16,
     paddingVertical: 4,

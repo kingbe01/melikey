@@ -1,5 +1,5 @@
 const EFFECTIVE_DATE = "September 7, 2026";
-const CONTACT_EMAIL = "support@melikey.me";
+export const CONTACT_EMAIL = "support@melikey.me";
 
 // Shared wrapper so both pages render consistently without a templating
 // dependency — this is served directly by Express, not built by Expo/React.

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { notify } from "../lib/notifications.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
+import { blockedUserIds } from "./users.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -28,6 +29,12 @@ router.post("/requests", async (req, res) => {
   const followee = await prisma.user.findUnique({ where: { id: followeeId } });
   if (!followee) {
     res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const blocked = await blockedUserIds(followerId);
+  if (blocked.has(followeeId)) {
+    res.status(403).json({ error: "Can't send a follow request to this user" });
     return;
   }
 
@@ -146,7 +153,8 @@ router.get("/suggestions", async (req, res) => {
     where: { followerId: userId },
     select: { followeeId: true, status: true },
   });
-  const excludeIds = new Set<string>([userId, ...myOutgoing.map((f) => f.followeeId)]);
+  const blocked = await blockedUserIds(userId);
+  const excludeIds = new Set<string>([userId, ...myOutgoing.map((f) => f.followeeId), ...blocked]);
   const followeeIds = myOutgoing.filter((f) => f.status === "APPROVED").map((f) => f.followeeId);
 
   if (followeeIds.length === 0) {
