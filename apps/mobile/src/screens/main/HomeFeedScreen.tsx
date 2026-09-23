@@ -20,7 +20,7 @@ import Button from "../../components/Button";
 import { api, type AuthUser, type FeedItem, type Likey } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
-import { promptReport } from "../../lib/reportContent";
+import { promptBlock, promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import { useCurrentLocation } from "../../lib/useCurrentLocation";
@@ -149,6 +149,12 @@ export default function HomeFeedScreen() {
     () => feed.filter((item) => !mutedUsernames.has(item.authorUsername)),
     [feed, mutedUsernames]
   );
+
+  // Blocking should remove that user's content from the feed instantly,
+  // not just on the next refetch.
+  const onBlockAuthor = (authorId: string) => {
+    setFeed((prev) => prev.filter((item) => item.authorId !== authorId));
+  };
 
   const onSearchLocation = async () => {
     if (!token || !locationQuery.trim()) return;
@@ -314,6 +320,15 @@ export default function HomeFeedScreen() {
                 <Text style={styles.reportButtonText}>Report</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() =>
+                  token && promptBlock(token, item.authorId, item.authorUsername, () => onBlockAuthor(item.authorId))
+                }
+              >
+                <Ionicons name="ban-outline" size={12} color={colors.danger} />
+                <Text style={styles.blockButtonText}>Block</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.copyButton}
                 onPress={() => navigation.navigate("CopyLikey", { source: feedItemToLikey(item) })}
               >
@@ -401,6 +416,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
+  blockButtonText: { color: colors.danger, fontSize: 12, fontWeight: "600" },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",

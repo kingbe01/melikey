@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
+import { CONTACT_EMAIL } from "../lib/legalPages.js";
+import { sendEmail } from "../lib/email.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -83,6 +85,17 @@ router.post("/:id/block", async (req, res) => {
       ],
     },
   });
+
+  const blocker = await prisma.user.findUnique({ where: { id: blockerId }, select: { username: true } });
+  // Best-effort, same as report notifications — a block is treated as an
+  // implicit report so the developer can review the blocked user's content.
+  await sendEmail(
+    CONTACT_EMAIL,
+    `New block: ${blocker?.username ?? blockerId} blocked ${target.username}`,
+    `<p><strong>${blocker?.username ?? blockerId}</strong> blocked <strong>${target.username}</strong>.</p>
+     <p><strong>Blocked user ID:</strong> ${blockedId}</p>
+     <p>Blocking severs the follow relationship both ways; this email is a heads up to review the blocked user's content for abuse.</p>`
+  ).catch(() => {});
 
   res.status(201).json({ ok: true });
 });

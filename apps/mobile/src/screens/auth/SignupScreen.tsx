@@ -1,10 +1,23 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Signup">;
 
@@ -13,10 +26,11 @@ export default function SignupScreen({ navigation, route }: Props) {
   const [email, setEmail] = useState(route.params?.email ?? "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = !isSubmitting && !!email && !!username && password.length >= 8;
+  const canSubmit = !isSubmitting && !!email && !!username && password.length >= 8 && hasAgreedToTerms;
 
   const onSubmit = async () => {
     setError(null);
@@ -70,6 +84,27 @@ export default function SignupScreen({ navigation, route }: Props) {
           value={password}
           onChangeText={setPassword}
         />
+        <TouchableOpacity
+          style={styles.termsRow}
+          onPress={() => setHasAgreedToTerms((v) => !v)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={hasAgreedToTerms ? "checkbox" : "square-outline"}
+            size={20}
+            color={hasAgreedToTerms ? colors.primary : colors.textMuted}
+          />
+          <Text style={styles.termsText}>
+            I agree to the{" "}
+            <Text style={styles.termsLink} onPress={() => Linking.openURL(`${API_URL}/terms`)}>
+              Terms of Service
+            </Text>{" "}
+            and{" "}
+            <Text style={styles.termsLink} onPress={() => Linking.openURL(`${API_URL}/privacy`)}>
+              Privacy Policy
+            </Text>
+          </Text>
+        </TouchableOpacity>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button
           label={isSubmitting ? "Creating account..." : "Sign up"}
@@ -107,4 +142,7 @@ const styles = StyleSheet.create({
   error: { color: colors.danger },
   submitButton: { marginTop: 4 },
   linkButton: { alignSelf: "center", marginTop: 8 },
+  termsRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 4 },
+  termsText: { flex: 1, color: colors.textMuted, fontSize: 13, lineHeight: 18 },
+  termsLink: { color: colors.primary, fontWeight: "600" },
 });

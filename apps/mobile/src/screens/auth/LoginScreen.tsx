@@ -1,10 +1,22 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
@@ -59,6 +71,16 @@ export default function LoginScreen({ navigation }: Props) {
           value={password}
           onChangeText={setPassword}
         />
+        <Text style={styles.termsText}>
+          By logging in you agree to our{" "}
+          <Text style={styles.termsLink} onPress={() => Linking.openURL(`${API_URL}/terms`)}>
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text style={styles.termsLink} onPress={() => Linking.openURL(`${API_URL}/privacy`)}>
+            Privacy Policy
+          </Text>
+        </Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button
           label={isSubmitting ? "Logging in..." : "Log in"}
@@ -103,4 +125,6 @@ const styles = StyleSheet.create({
   error: { color: colors.danger },
   submitButton: { marginTop: 4 },
   linkRow: { gap: 8, marginTop: 8, alignItems: "center" },
+  termsText: { color: colors.textMuted, fontSize: 13, lineHeight: 18, textAlign: "center", marginTop: 4 },
+  termsLink: { color: colors.primary, fontWeight: "600" },
 });

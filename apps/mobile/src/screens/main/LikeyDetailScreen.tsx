@@ -19,7 +19,7 @@ import Avatar from "../../components/Avatar";
 import { type LikeyWithAuthor, api } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
-import { promptReport } from "../../lib/reportContent";
+import { promptBlock, promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
@@ -163,6 +163,15 @@ export default function LikeyDetailScreen({ likeyId, onBack }: { likeyId: string
                 <Ionicons name="flag-outline" size={12} color={colors.textMuted} />
                 <Text style={styles.reportButtonText}>Report</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() =>
+                  token && promptBlock(token, likey.author.id, likey.author.username, onBack)
+                }
+              >
+                <Ionicons name="ban-outline" size={12} color={colors.danger} />
+                <Text style={styles.blockButtonText}>Block</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.copyButton} onPress={() => navigation.navigate("CopyLikey", { source: likey })}>
                 <Ionicons name="copy-outline" size={12} color={colors.primaryDark} />
                 <Text style={styles.copyButtonText}>Copy Likey</Text>
@@ -214,6 +223,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
+  blockButtonText: { color: colors.danger, fontSize: 12, fontWeight: "600" },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",

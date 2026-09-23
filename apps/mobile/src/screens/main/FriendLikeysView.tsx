@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   RefreshControl,
@@ -21,7 +20,7 @@ import { formatRelativeTime } from "../../lib/formatRelativeTime";
 import { type LikeyGroup, groupLikeysByPlace } from "../../lib/groupLikeysByPlace";
 import { CATEGORY_FILTERS, SORTS, TIER_FILTERS } from "../../lib/likeyFilterOptions";
 import { subjectLine } from "../../lib/likeySubject";
-import { promptReport } from "../../lib/reportContent";
+import { promptBlock, promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList } from "../../navigation/MainNavigator";
@@ -57,24 +56,8 @@ export default function FriendLikeysView({
   const { openImage, modal: imageViewerModal } = useImageViewer();
 
   const confirmBlock = () => {
-    Alert.alert(
-      `Block @${user.username}?`,
-      "They won't be able to follow you, and you won't see their Likeys anymore.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Block",
-          style: "destructive",
-          onPress: () => {
-            if (!token) return;
-            api
-              .blockUser(token, user.id)
-              .then(onBack)
-              .catch((e) => Alert.alert("Couldn't block", e instanceof Error ? e.message : "Try again later"));
-          },
-        },
-      ]
-    );
+    if (!token) return;
+    promptBlock(token, user.id, user.username, onBack);
   };
 
   const load = useCallback(async () => {

@@ -169,6 +169,7 @@ export interface FeedItem {
   comment: string | null;
   photoUrl: string | null;
   createdAt: string;
+  authorId: string;
   authorUsername: string;
   authorProfilePhotoUrl: string | null;
   businessId: string;
