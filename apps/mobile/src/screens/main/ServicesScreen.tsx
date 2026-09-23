@@ -21,6 +21,7 @@ import Button from "../../components/Button";
 import { api, SERVICE_SUBCATEGORIES, type LikeyWithAuthor, type ServiceSubcategory } from "../../lib/api";
 import { formatLocation } from "../../lib/formatLocation";
 import { formatRelativeTime } from "../../lib/formatRelativeTime";
+import { promptBlock, promptReport } from "../../lib/reportContent";
 import { useImageViewer } from "../../lib/useImageViewer";
 import { TIER_COLORS, TIER_LABELS } from "../../lib/likeyTiers";
 import type { MainStackParamList, MainTabParamList } from "../../navigation/MainNavigator";
@@ -69,6 +70,12 @@ export default function ServicesScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Blocking should remove that user's content from this list instantly,
+  // not just on the next refetch.
+  const onBlockAuthor = (authorId: string) => {
+    setLikeys((prev) => prev.filter((item) => item.author.id !== authorId));
+  };
 
   if (isCreating) {
     return (
@@ -187,6 +194,24 @@ export default function ServicesScreen() {
               </View>
             ) : null}
             {item.comment ? <Text style={styles.comment}>{item.comment}</Text> : null}
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() => token && promptReport(token, "LIKEY", item.id)}
+              >
+                <Ionicons name="flag-outline" size={12} color={colors.textMuted} />
+                <Text style={styles.reportButtonText}>Report</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() =>
+                  token && promptBlock(token, item.author.id, item.author.username, () => onBlockAuthor(item.author.id))
+                }
+              >
+                <Ionicons name="ban-outline" size={12} color={colors.danger} />
+                <Text style={styles.blockButtonText}>Block</Text>
+              </TouchableOpacity>
+            </View>
             {item.photoUrl ? (
               <TouchableOpacity onPress={() => openImage(item.photoUrl!)}>
                 <Image source={{ uri: item.photoUrl }} style={styles.photo} />
@@ -253,4 +278,15 @@ const styles = StyleSheet.create({
   contactRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
   contactButton: { flexDirection: "row", alignItems: "center", gap: 4 },
   contactButtonText: { color: colors.primaryDark, fontSize: 13, fontWeight: "600" },
+  actionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 4 },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  reportButtonText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
+  blockButtonText: { color: colors.danger, fontSize: 12, fontWeight: "600" },
 });
