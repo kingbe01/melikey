@@ -213,26 +213,15 @@ router.patch("/me", requireAuth, async (req, res) => {
   res.json({ user });
 });
 
-const deleteMeSchema = z.object({ password: z.string().min(1) });
-
-// Requires re-entering the password as a confirmation step, same as
-// password-gated actions elsewhere — this is permanent and irreversible.
+// Confirmation happens client-side (an "are you sure" alert) rather than by
+// re-entering a password — Apple's Guideline 5.1.1(v) review flagged the
+// password step as an extra barrier to deletion, even though every account
+// already has one from signup. This is permanent and irreversible.
 // Notifications where this user was only the actor (not the owner) are
 // preserved with actorId cleared rather than deleted, matching the existing
 // nullable-actorId design (see schema.prisma's Notification model comment).
 router.delete("/me", requireAuth, async (req, res) => {
-  const parsed = deleteMeSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
-  }
   const userId = req.userId!;
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
-    res.status(401).json({ error: "Incorrect password" });
-    return;
-  }
 
   await prisma.$transaction([
     prisma.notification.updateMany({ where: { actorId: userId }, data: { actorId: null } }),

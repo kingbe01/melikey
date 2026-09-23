@@ -14,7 +14,6 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
   const { user, updateUsername, updateDefaultRadiusMiles, deleteAccount } = useAuth();
   const [isSaving, setIsSaving] = useState<number | null>(null);
 
-  const [deletePassword, setDeletePassword] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -41,7 +40,6 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
   };
 
   const onDeleteAccount = () => {
-    if (!deletePassword) return;
     Alert.alert(
       "Delete your account?",
       "This permanently deletes your account and everything you've posted. This can't be undone.",
@@ -54,7 +52,7 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
             setDeleteError(null);
             setIsDeletingAccount(true);
             try {
-              await deleteAccount(deletePassword);
+              await deleteAccount();
             } catch (e) {
               setDeleteError(e instanceof Error ? e.message : "Couldn't delete account");
             } finally {
@@ -131,21 +129,11 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
       <Text style={styles.subtitle}>
         Permanently deletes your account and everything you've posted. This can't be undone.
       </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your password to confirm"
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={deletePassword}
-        onChangeText={setDeletePassword}
-      />
       {deleteError ? <Text style={styles.error}>{deleteError}</Text> : null}
       <Button
         label="Delete Account"
         variant="danger"
         loading={isDeletingAccount}
-        disabled={!deletePassword}
         style={styles.deleteButton}
         onPress={onDeleteAccount}
       />

@@ -240,11 +240,10 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  deleteAccount: (token: string, password: string) =>
+  deleteAccount: (token: string) =>
     request<void>("/auth/me", {
       method: "DELETE",
       token,
-      body: JSON.stringify({ password }),
     }),
 
   forgotPassword: (email: string) =>
