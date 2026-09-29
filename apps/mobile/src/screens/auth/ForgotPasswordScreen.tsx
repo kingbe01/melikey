@@ -45,6 +45,10 @@ export default function ForgotPasswordScreen({ navigation, route }: Props) {
           placeholder="Email"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete="email"
+          textContentType="username"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}

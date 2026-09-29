@@ -1,3 +1,5 @@
+import { CLIENT_INFO_HEADERS } from "./clientInfo";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export class ApiError extends Error {
@@ -35,6 +37,7 @@ async function request<T>(
     res = await fetch(`${API_URL}${path}`, {
       ...rest,
       headers: {
+        ...CLIENT_INFO_HEADERS,
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
@@ -58,6 +61,14 @@ async function request<T>(
   }
 
   return (await res.json()) as T;
+}
+
+// For auth screens: append the status so a user/reviewer screenshot tells us
+// which failure it was — (401) bad credentials, (5xx) server, (network) never
+// reached the server.
+export function describeAuthError(e: unknown, fallback: string): string {
+  if (e instanceof ApiError) return `${e.message} (${e.status === 0 ? "network" : e.status})`;
+  return e instanceof Error ? e.message : fallback;
 }
 
 export interface AuthUser {

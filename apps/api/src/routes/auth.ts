@@ -6,6 +6,7 @@ import { sendEmail } from "../lib/email.js";
 import { signToken } from "../lib/jwt.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
+import { maskEmail } from "../middleware/requestLog.js";
 
 const router = Router();
 
@@ -19,6 +20,15 @@ function hashResetCode(code: string): string {
   return crypto.createHash("sha256").update(code).digest("hex");
 }
 
+// Emails are stored lowercased and trimmed, and looked up case-insensitively
+// so accounts created before normalization (possibly mixed-case) still match
+// — an iPad keyboard auto-capitalizing "Reviewer@..." must not fail login.
+const emailSchema = z.string().trim().toLowerCase().email();
+
+function findUserByEmail(email: string) {
+  return prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
+}
+
 const usernameSchema = z
   .string()
   .min(3)
@@ -26,7 +36,7 @@ const usernameSchema = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username may only contain letters, numbers, and underscores");
 
 const signupSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   username: usernameSchema,
   password: z.string().min(8),
 });
@@ -40,7 +50,7 @@ router.post("/signup", async (req, res) => {
   const { email, username, password } = parsed.data;
 
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ email }, { username }] },
+    where: { OR: [{ email: { equals: email, mode: "insensitive" } }, { username }] },
   });
   if (existing) {
     res.status(409).json({ error: "Email or username already in use" });
@@ -60,24 +70,27 @@ router.post("/signup", async (req, res) => {
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   password: z.string(),
 });
 
 router.post("/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
+    res.locals.logNote = "login rejected: invalid input";
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await findUserByEmail(email);
   const valid = user ? await bcrypt.compare(password, user.passwordHash) : false;
   if (!user || !valid) {
+    res.locals.logNote = `login rejected: ${user ? "wrong password" : "unknown email"} for ${maskEmail(email)}`;
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
+  res.locals.logNote = `login ok for ${maskEmail(email)}`;
 
   const token = signToken(user.id);
   res.json({
@@ -86,7 +99,7 @@ router.post("/login", async (req, res) => {
   });
 });
 
-const forgotPasswordSchema = z.object({ email: z.string().email() });
+const forgotPasswordSchema = z.object({ email: emailSchema });
 
 router.post("/forgot-password", async (req, res) => {
   const parsed = forgotPasswordSchema.safeParse(req.body);
@@ -95,7 +108,7 @@ router.post("/forgot-password", async (req, res) => {
     return;
   }
   const { email } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await findUserByEmail(email);
 
   // Always respond the same way regardless of whether the email is
   // registered, so this endpoint can't be used to enumerate accounts.
@@ -119,7 +132,7 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 const resetPasswordSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   code: z.string().length(6),
   password: z.string().min(8),
 });
@@ -132,7 +145,7 @@ router.post("/reset-password", async (req, res) => {
   }
   const { email, code, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await findUserByEmail(email);
   const resetToken = user
     ? await prisma.passwordResetToken.findFirst({
         where: {

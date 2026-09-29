@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import { describeAuthError } from "../../lib/api";
 import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
@@ -35,7 +36,7 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       await login(email.trim(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      setError(describeAuthError(e, "Login failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,6 +60,10 @@ export default function LoginScreen({ navigation }: Props) {
           placeholder="Email"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete="email"
+          textContentType="username"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
@@ -68,6 +73,8 @@ export default function LoginScreen({ navigation }: Props) {
           placeholder="Password"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
+          autoCorrect={false}
+          textContentType="password"
           value={password}
           onChangeText={setPassword}
         />

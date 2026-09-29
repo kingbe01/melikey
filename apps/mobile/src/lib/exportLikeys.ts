@@ -1,6 +1,7 @@
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import type { LikeyCategory } from "./api";
+import { CLIENT_INFO_HEADERS } from "./clientInfo";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -23,7 +24,7 @@ export async function exportLikeys(
   let res: Response;
   try {
     res = await fetch(`${API_URL}/export/likeys?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { ...CLIENT_INFO_HEADERS, Authorization: `Bearer ${token}` },
     });
   } catch {
     throw new Error("Couldn't connect. Check your internet connection and try again.");

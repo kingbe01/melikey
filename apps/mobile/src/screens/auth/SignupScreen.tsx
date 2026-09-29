@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
+import { describeAuthError } from "../../lib/api";
 import Button from "../../components/Button";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { colors } from "../../theme/colors";
@@ -38,7 +39,7 @@ export default function SignupScreen({ navigation, route }: Props) {
     try {
       await signup(email.trim(), username.trim(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign up failed");
+      setError(describeAuthError(e, "Sign up failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -62,6 +63,10 @@ export default function SignupScreen({ navigation, route }: Props) {
           placeholder="Email"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete="email"
+          textContentType="username"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
@@ -81,6 +86,7 @@ export default function SignupScreen({ navigation, route }: Props) {
           placeholder="Password (min 8 characters)"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
+          autoCorrect={false}
           value={password}
           onChangeText={setPassword}
         />
